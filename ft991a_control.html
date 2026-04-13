@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WebRig – FT-991A Control</title>
+<style>
+:root{
+  --bg:#0e0e0c;--panel:#181816;--panel2:#1e1e1c;--panel3:#242422;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);--border3:rgba(255,255,255,0.2);
+  --text:#c8c8c4;--text2:#787874;--text3:#484844;
+  --freq-bg:#050805;--freq:#e8a020;--freq-dim:#4a3208;
+  --accent:#4d8ef7;--accent-bg:rgba(77,142,247,0.12);
+  --green:#4ade80;--green-bg:rgba(74,222,128,0.08);
+  --amber:#fbbf24;--red:#f87171;
+  --btn:#222220;--btn2:#2c2c2a;--btn3:#343432;
+  --on-green:#1a3a1a;--on-green-b:#2a7a2a;
+  --on-blue:#1a2a4a;--on-blue-b:#2a5acc;
+  --on-red:#3a1a1a;--on-red-b:#cc2222;
+  --meter-bg:#060806;--s-green:#22cc44;--s-amber:#ccaa22;--s-red:#cc2222;
+  --pwr-blue:#2266cc;--alc-purple:#9944cc;--swr-orange:#cc6622;
+  --r:4px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;min-height:100vh;display:flex;flex-direction:column}
+
+/* ── NAV ── */
+nav{display:flex;align-items:center;padding:10px 16px;border-bottom:0.5px solid var(--border);background:rgba(14,14,12,.95);backdrop-filter:blur(12px);flex-shrink:0;gap:6px}
+.nav-logo{font-size:15px;font-weight:700;letter-spacing:-.4px;color:var(--text);text-decoration:none}
+.nav-logo em{color:var(--accent);font-style:normal}
+.nav-sep{width:0.5px;height:14px;background:var(--border2);margin:0 4px}
+.nav-link{padding:4px 9px;border-radius:var(--r);font-size:12px;color:var(--text2);text-decoration:none;transition:all .12s}
+.nav-link:hover{color:var(--text);background:var(--panel3)}
+.nav-link.active{color:var(--text);background:var(--panel3)}
+.nav-sp{flex:1}
+.ndot{width:7px;height:7px;border-radius:50%;background:var(--text3);transition:background .3s;flex-shrink:0}
+.ndot.on{background:var(--green)}
+.nbadge{font-size:11px;padding:2px 8px;border-radius:20px;border:0.5px solid var(--border2);color:var(--text3)}
+select.nsel{font-family:inherit;font-size:12px;padding:3px 6px;border-radius:var(--r);border:0.5px solid var(--border2);background:var(--panel);color:var(--text2);cursor:pointer}
+button.nbtn{font-family:inherit;font-size:12px;padding:4px 10px;border-radius:var(--r);border:0.5px solid var(--border2);background:transparent;color:var(--text);cursor:pointer;transition:background .1s}
+button.nbtn:hover{background:var(--panel3)}
+button.nbtn.danger{color:var(--red);border-color:rgba(248,113,113,.3)}
+
+/* ── BANNER ── */
+.banner{display:none;align-items:center;gap:10px;padding:7px 16px;border-bottom:0.5px solid rgba(251,191,36,.2);background:rgba(251,191,36,.06);font-size:12px;color:var(--amber);flex-shrink:0}
+.banner.show{display:flex}
+.banner button{margin-left:auto;font-family:inherit;font-size:11px;padding:3px 9px;border-radius:var(--r);border:0.5px solid rgba(251,191,36,.3);background:transparent;color:var(--amber);cursor:pointer}
+
+/* ── MAIN LAYOUT ── */
+.rig{flex:1;display:grid;grid-template-columns:1fr 180px;grid-template-rows:auto auto auto auto;gap:4px;padding:6px;max-width:1000px;margin:0 auto;width:100%}
+
+/* ── PANEL BASE ── */
+.pnl{background:var(--panel);border:0.5px solid var(--border);border-radius:var(--r);padding:8px 10px}
+.pnl-lbl{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px}
+
+/* ── VFO DISPLAY ── */
+.vfo-pnl{grid-column:1;background:var(--panel);border:0.5px solid var(--border);border-radius:var(--r);padding:8px 10px}
+.vfo-row{display:flex;align-items:center;gap:8px}
+.vfo-block{flex:1;background:var(--freq-bg);border:0.5px solid #1a2a0a;border-radius:var(--r);padding:8px 12px;position:relative;cursor:pointer;transition:border-color .15s}
+.vfo-block.vfo-active{border-color:#3a6a1a}
+.vfo-tag{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.1em;margin-bottom:4px}
+.vfo-block.vfo-active .vfo-tag{color:#6aaa2a}
+.vfo-digits{display:flex;align-items:baseline;gap:1px;font-family:'Courier New',Courier,monospace;font-weight:700;line-height:1}
+.d-grp{display:flex;gap:1px}
+.d-sep{font-size:22px;color:var(--freq-dim);padding:0 2px;align-self:flex-end;margin-bottom:3px}
+.dig{font-size:36px;color:var(--freq);cursor:ns-resize;transition:color .1s;padding:0 1px;border-radius:2px}
+.dig:hover{color:#ffc840;background:rgba(255,200,50,.08)}
+.dig.dim{font-size:22px;color:var(--freq-dim);margin-bottom:3px}
+.dig.dim:hover{color:#e8a020;background:rgba(255,200,50,.08)}
+.vfo-meta{display:flex;align-items:center;gap:8px;margin-top:6px}
+.mode-pill{background:var(--panel3);border:0.5px solid var(--border2);border-radius:3px;font-size:11px;font-weight:600;padding:2px 8px;color:var(--text);letter-spacing:.04em}
+.tx-badge{background:var(--on-red);border:0.5px solid var(--on-red-b);border-radius:3px;font-size:11px;font-weight:700;padding:2px 8px;color:var(--red);letter-spacing:.06em;display:none}
+.tx-badge.show{display:inline-block}
+.split-badge{background:var(--on-blue);border:0.5px solid var(--on-blue-b);border-radius:3px;font-size:11px;padding:2px 7px;color:#7aacff;display:none}
+.split-badge.show{display:inline-block}
+
+/* VFO controls */
+.vfo-ctrl{display:flex;flex-direction:column;gap:4px;min-width:100px}
+.vc-row{display:flex;gap:4px}
+.vcb{flex:1;font-family:inherit;font-size:11px;font-weight:600;padding:5px 4px;border-radius:var(--r);border:0.5px solid var(--border2);background:var(--btn);color:var(--text);cursor:pointer;text-align:center;transition:all .1s;letter-spacing:.03em}
+.vcb:hover{background:var(--btn3);border-color:var(--border3)}
+.vcb.on{background:var(--on-blue);border-color:var(--on-blue-b);color:#7aacff}
+
+/* RIT row */
+.rit-row{display:flex;align-items:center;gap:6px;margin-top:6px;padding-top:6px;border-top:0.5px solid var(--border)}
+.rit-btn{font-family:inherit;font-size:11px;padding:3px 10px;border-radius:var(--r);border:0.5px solid var(--border2);background:var(--btn);color:var(--text2);cursor:pointer;transition:all .1s}
+.rit-btn:hover{background:var(--btn3)}
+.rit-btn.on{background:var(--on-green);border-color:var(--on-green-b);color:var(--green)}
+.rit-val{font-family:'Courier New',monospace;font-size:13px;color:var(--freq);min-width:60px;text-align:center;background:var(--freq-bg);border:0.5px solid #1a2a0a;border-radius:var(--r);padding:2px 8px}
+.rit-slider{flex:1;accent-color:var(--accent)}
+
+/* ── METERS ── */
+.meter-pnl{grid-column:1;display:grid;grid-template-columns:1fr auto auto auto;gap:6px;align-items:center}
+.smeter-wrap{background:var(--meter-bg);border:0.5px solid var(--border);border-radius:var(--r);padding:6px 10px}
+.sm-title{font-size:10px;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px}
+.sm-segs{display:flex;align-items:flex-end;gap:2px;height:28px}
+.seg{width:10px;border-radius:1px 1px 0 0;opacity:.15;transition:opacity .1s}
+.seg.lit{opacity:1}
+.sm-ticks{display:flex;justify-content:space-between;font-size:9px;color:var(--text3);margin-top:3px;padding:0 1px}
+.mini-meter{background:var(--meter-bg);border:0.5px solid var(--border);border-radius:var(--r);padding:6px 10px;min-width:90px}
+.mm-title{font-size:10px;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}
+.mm-track{height:10px;background:var(--panel3);border-radius:2px;overflow:hidden;margin-bottom:3px}
+.mm-fill{height:100%;border-radius:2px;transition:width .15s;width:0%}
+.fill-pwr{background:linear-gradient(90deg,var(--pwr-blue),#44aaff)}
+.fill-alc{background:linear-gradient(90deg,var(--alc-purple),#cc66ff)}
+.fill-swr{background:linear-gradient(90deg,var(--s-green),var(--s-amber) 60%,var(--s-red))}
+.mm-val{font-size:11px;font-family:'Courier New',monospace;color:var(--text);text-align:right}
+
+/* ── RIGHT COLUMN – BANDS ── */
+.band-pnl{grid-column:2;grid-row:1/3;display:flex;flex-direction:column;gap:3px}
+.band-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+.bb{font-family:inherit;font-size:12px;font-weight:600;padding:7px 4px;border-radius:var(--r);border:0.5px solid var(--border2);background:var(--btn);color:var(--text2);cursor:pointer;text-align:center;transition:all .12s;letter-spacing:.03em}
+.bb:hover{background:var(--btn3);color:var(--text)}
+.bb.on{background:var(--on-green);border-color:var(--on-green-b);color:var(--green)}
+
+/* ── MODE ── */
+.mode-pnl{grid-column:2}
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+.mb{font-family:inherit;font-size:11px;font-weight:600;padding:6px 4px;border-radius:var(--r);border:0.5px solid var(--border2);background:var(--btn);color:var(--text2);cursor:pointer;text-align:center;transition:all .12s;letter-spacing:.04em}
+.mb:hover{background:var(--btn3);color:var(--text)}
+.mb.on{background:var(--on-blue);border-color:var(--on-blue-b);color:#7aacff}
+
+/* ── TX/RX CONTROLS ── */
+.tx-pnl{grid-column:1;display:grid;grid-template-columns:auto 1fr auto auto auto auto;gap:8px;align-items:center}
+.mox-btn{font-family:inherit;font-size:13px;font-weight:700;padding:10px 18px;border-radius:var(--r);border:0.5px solid var(--border3);background:var(--btn2);color:var(--text);cursor:pointer;letter-spacing:.06em;transition:all .12s;min-width:80px;text-align:center}
+.mox-btn:hover{background:var(--btn3)}
+.mox-btn.tx{background:var(--on-red);border-color:var(--on-red-b);color:var(--red);animation:txblink 1s infinite}
+@keyframes txblink{0%,100%{border-color:var(--on-red-b)}50%{border-color:#ff4444}}
+.pwr-grp{display:flex;flex-direction:column;gap:3px}
+.pwr-lbl{font-size:10px;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;display:flex;justify-content:space-between}
+.pwr-lbl span{color:var(--text);font-family:'Courier New',monospace}
+input[type=range]{accent-color:var(--accent);width:100%;cursor:pointer}
+.ctrl-grp{display:flex;flex-direction:column;gap:4px;align-items:center}
+.ctrl-lbl{font-size:10px;color:var(--text3);letter-spacing:.05em;text-transform:uppercase;margin-bottom:2px}
+.ctrl-btn{font-family:inherit;font-size:11px;padding:4px 10px;border-radius:var(--r);border:0.5px solid var(--border2);background:var(--btn);color:var(--text2);cursor:pointer;transition:all .1s;white-space:nowrap}
+.ctrl-btn:hover{background:var(--btn3);color:var(--text)}
+.ctrl-btn.on{background:var(--on-green);border-color:var(--on-green-b);color:var(--green)}
+
+/* ── RX CONTROLS ── */
+.rx-pnl{grid-column:1;display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:8px;align-items:end}
+.gain-grp{display:flex;flex-direction:column;gap:3px}
+.gain-lbl{font-size:10px;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;display:flex;justify-content:space-between}
+.gain-lbl span{color:var(--text);font-family:'Courier New',monospace;font-size:10px}
+.tog-grp{display:flex;flex-direction:column;gap:3px}
+.tog-lbl{font-size:10px;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
+.tog-row{display:flex;gap:3px}
+.tob{font-family:inherit;font-size:10px;font-weight:600;padding:4px 8px;border-radius:var(--r);border:0.5px solid var(--border2);background:var(--btn);color:var(--text2);cursor:pointer;transition:all .1s}
+.tob:hover{background:var(--btn3);color:var(--text)}
+.tob.on{background:var(--on-green);border-color:var(--on-green-b);color:var(--green)}
+
+/* ── STATUS BAR ── */
+.sbar{display:flex;align-items:center;gap:14px;padding:6px 16px;border-top:0.5px solid var(--border);background:var(--panel);font-size:11px;color:var(--text2);flex-shrink:0}
+.sbar-sp{flex:1}
+.sbar-ok{color:var(--green)}
+.sbar-err{color:var(--red)}
+
+/* scrollbar */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="index.html">Web<em>Rig</em></a>
+  <div class="nav-sep"></div>
+  <a class="nav-link" href="index.html">Home</a>
+  <a class="nav-link" href="ft991a_memory.html">Memory</a>
+  <a class="nav-link active" href="ft991a_control.html">Control</a>
+  <div class="nav-sp"></div>
+  <div class="ndot" id="ndot"></div>
+  <span class="nbadge" id="nlbl">Not connected</span>
+  <select class="nsel" id="baud">
+    <option value="38400" selected>38400</option>
+    <option value="19200">19200</option>
+    <option value="9600">9600</option>
+    <option value="4800">4800</option>
+  </select>
+  <button class="nbtn" id="auto-btn" onclick="autoDetect()">Auto-detect</button>
+  <button class="nbtn" id="conn-btn" onclick="toggleConnect()">Connect</button>
+</nav>
+
+<!-- BANNER -->
+<div class="banner" id="banner">
+  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 1.5l6.5 12H1.5z" stroke-linejoin="round"/><line x1="8" y1="6" x2="8" y2="10"/><circle cx="8" cy="12" r=".6" fill="currentColor"/></svg>
+  <span id="banner-txt"></span>
+  <button onclick="hideBanner()">Dismiss</button>
+</div>
+
+<!-- MAIN RIG -->
+<div class="rig">
+
+  <!-- VFO DISPLAY -->
+  <div class="vfo-pnl" style="grid-column:1;grid-row:1">
+    <div class="vfo-row">
+      <!-- VFO A -->
+      <div class="vfo-block vfo-active" id="vfoA" onclick="setActiveVFO('A')">
+        <div class="vfo-tag">VFO A</div>
+        <div class="vfo-digits" id="digA"></div>
+        <div class="vfo-meta">
+          <span class="mode-pill" id="modeA">USB</span>
+          <span class="tx-badge" id="txBadge">TX</span>
+          <span class="split-badge" id="splitBadge">SPLIT</span>
+        </div>
+      </div>
+      <!-- VFO controls -->
+      <div class="vfo-ctrl">
+        <div class="vc-row">
+          <button class="vcb" onclick="catCmd('AB;')">A→B</button>
+          <button class="vcb" onclick="catCmd('BA;')">B→A</button>
+        </div>
+        <div class="vc-row">
+          <button class="vcb" id="swapBtn" onclick="swapVFO()">A↔B</button>
+          <button class="vcb" id="splitBtn" onclick="toggleSplit()">SPLIT</button>
+        </div>
+      </div>
+      <!-- VFO B -->
+      <div class="vfo-block" id="vfoB" onclick="setActiveVFO('B')">
+        <div class="vfo-tag">VFO B</div>
+        <div class="vfo-digits" id="digB"></div>
+        <div class="vfo-meta">
+          <span class="mode-pill" id="modeB">USB</span>
+        </div>
+      </div>
+    </div>
+    <!-- RIT -->
+    <div class="rit-row">
+      <button class="rit-btn" id="ritBtn" onclick="toggleRIT()">RIT</button>
+      <button class="rit-btn" id="xitBtn" onclick="toggleXIT()">XIT</button>
+      <span class="rit-val" id="ritVal">0 Hz</span>
+      <input type="range" class="rit-slider" id="ritSlider" min="-1000" max="1000" step="10" value="0" oninput="setRIT(this.value)">
+      <button class="rit-btn" onclick="clearRIT()">CLR</button>
+    </div>
+  </div>
+
+  <!-- BAND PANEL (right col row 1-2) -->
+  <div class="band-pnl pnl" style="grid-column:2;grid-row:1/3">
+    <div class="pnl-lbl">Band</div>
+    <div class="band-grid">
+      <button class="bb" onclick="setBand(1800000)">160m</button>
+      <button class="bb" onclick="setBand(3600000)">80m</button>
+      <button class="bb" onclick="setBand(7100000)">40m</button>
+      <button class="bb" onclick="setBand(10130000)">30m</button>
+      <button class="bb" onclick="setBand(14200000)">20m</button>
+      <button class="bb" onclick="setBand(18100000)">17m</button>
+      <button class="bb" onclick="setBand(21200000)">15m</button>
+      <button class="bb" onclick="setBand(24900000)">12m</button>
+      <button class="bb" onclick="setBand(28500000)">10m</button>
+      <button class="bb" onclick="setBand(50150000)">6m</button>
+      <button class="bb" onclick="setBand(144200000)">2m</button>
+      <button class="bb" onclick="setBand(432200000)">70cm</button>
+    </div>
+  </div>
+
+  <!-- METERS -->
+  <div class="meter-pnl pnl" style="grid-column:1;grid-row:2">
+    <!-- S-meter -->
+    <div class="smeter-wrap">
+      <div class="sm-title">Signal / S-meter</div>
+      <div class="sm-segs" id="smSegs">
+        <!-- S1-S9: green, S9+: amber/red - generated by JS -->
+      </div>
+      <div class="sm-ticks">
+        <span>1</span><span>3</span><span>5</span><span>7</span><span>9</span><span>+20</span><span>+40</span><span>+60</span>
+      </div>
+    </div>
+    <!-- Mini meters -->
+    <div class="mini-meter">
+      <div class="mm-title">Power</div>
+      <div class="mm-track"><div class="mm-fill fill-pwr" id="fillPwr"></div></div>
+      <div class="mm-val" id="valPwr">– W</div>
+    </div>
+    <div class="mini-meter">
+      <div class="mm-title">ALC</div>
+      <div class="mm-track"><div class="mm-fill fill-alc" id="fillAlc"></div></div>
+      <div class="mm-val" id="valAlc">–</div>
+    </div>
+    <div class="mini-meter">
+      <div class="mm-title">SWR</div>
+      <div class="mm-track"><div class="mm-fill fill-swr" id="fillSwr"></div></div>
+      <div class="mm-val" id="valSwr">–</div>
+    </div>
+  </div>
+
+  <!-- MODE PANEL (right col row 3) -->
+  <div class="pnl" style="grid-column:2;grid-row:3">
+    <div class="pnl-lbl">Mode</div>
+    <div class="mode-grid">
+      <button class="mb" data-mode="2" onclick="setMode('2')">USB</button>
+      <button class="mb" data-mode="1" onclick="setMode('1')">LSB</button>
+      <button class="mb" data-mode="4" onclick="setMode('4')">FM</button>
+      <button class="mb" data-mode="B" onclick="setMode('B')">FM-N</button>
+      <button class="mb" data-mode="5" onclick="setMode('5')">AM</button>
+      <button class="mb" data-mode="D" onclick="setMode('D')">AM-N</button>
+      <button class="mb" data-mode="3" onclick="setMode('3')">CW</button>
+      <button class="mb" data-mode="7" onclick="setMode('7')">CW-R</button>
+      <button class="mb" data-mode="8" onclick="setMode('8')">DATA-L</button>
+      <button class="mb" data-mode="C" onclick="setMode('C')">DATA-U</button>
+      <button class="mb" data-mode="6" onclick="setMode('6')">RTTY</button>
+      <button class="mb" data-mode="E" onclick="setMode('E')">C4FM</button>
+    </div>
+  </div>
+
+  <!-- TX CONTROLS -->
+  <div class="tx-pnl pnl" style="grid-column:1;grid-row:3">
+    <button class="mox-btn" id="moxBtn" onclick="toggleMOX()">MOX</button>
+    <div class="pwr-grp">
+      <div class="pwr-lbl">RF Power <span id="pwrVal">100W</span></div>
+      <input type="range" id="pwrSlider" min="5" max="100" value="100" oninput="setPower(this.value)">
+    </div>
+    <div class="ctrl-grp">
+      <div class="ctrl-lbl">Tuner</div>
+      <button class="ctrl-btn" id="tunerBtn" onclick="toggleTuner()">OFF</button>
+      <button class="ctrl-btn" onclick="catCmd('AC002;')">TUNE</button>
+    </div>
+    <div class="ctrl-grp">
+      <div class="ctrl-lbl">Pre-amp</div>
+      <button class="ctrl-btn" id="ampBtn" onclick="cycleAmp()">IPO</button>
+    </div>
+    <div class="ctrl-grp">
+      <div class="ctrl-lbl">ATT</div>
+      <button class="ctrl-btn" id="attBtn" onclick="toggleATT()">OFF</button>
+    </div>
+    <div class="ctrl-grp">
+      <div class="ctrl-lbl">AGC</div>
+      <button class="ctrl-btn" id="agcBtn" onclick="cycleAGC()">AUTO</button>
+    </div>
+  </div>
+
+  <!-- RX CONTROLS -->
+  <div class="rx-pnl pnl" style="grid-column:1;grid-row:4">
+    <div class="gain-grp">
+      <div class="gain-lbl">AF Gain <span id="afVal">128</span></div>
+      <input type="range" id="afSlider" min="0" max="255" value="128" oninput="setAF(this.value)">
+    </div>
+    <div class="gain-grp">
+      <div class="gain-lbl">RF Gain <span id="rfVal">255</span></div>
+      <input type="range" id="rfSlider" min="0" max="255" value="255" oninput="setRF(this.value)">
+    </div>
+    <div class="gain-grp">
+      <div class="gain-lbl">MIC Gain <span id="mgVal">50</span></div>
+      <input type="range" id="mgSlider" min="0" max="100" value="50" oninput="setMIC(this.value)">
+    </div>
+    <div class="tog-grp">
+      <div class="tog-lbl">NB / NR</div>
+      <div class="tog-row">
+        <button class="tob" id="nbBtn" onclick="toggleNB()">NB</button>
+        <button class="tob" id="nrBtn" onclick="toggleNR()">NR</button>
+      </div>
+    </div>
+    <div class="tog-grp">
+      <div class="tog-lbl">Lock / Scan</div>
+      <div class="tog-row">
+        <button class="tob" id="lkBtn" onclick="toggleLock()">LOCK</button>
+        <button class="tob" id="scBtn" onclick="toggleScan()">SCAN</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT bottom -->
+  <div class="pnl" style="grid-column:2;grid-row:4">
+    <div class="pnl-lbl">Quick</div>
+    <div style="display:flex;flex-direction:column;gap:3px">
+      <button class="ctrl-btn" style="font-size:11px" onclick="catCmd('QI;')">QMB Store</button>
+      <button class="ctrl-btn" style="font-size:11px" onclick="catCmd('QR;')">QMB Recall</button>
+      <button class="ctrl-btn" style="font-size:11px" onclick="catCmd('QS;')">Quick Split</button>
+      <button class="ctrl-btn" style="font-size:11px" onclick="sendMA()">Mem → VFO</button>
+    </div>
+  </div>
+
+</div><!-- end .rig -->
+
+<!-- STATUS BAR -->
+<div class="sbar">
+  <span id="st-freq">VFO-A: –</span>
+  <span>·</span>
+  <span id="st-mode">Mode: –</span>
+  <div class="sbar-sp"></div>
+  <span id="st-msg"></span>
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────
+let port=null,reader=null,writer=null,readBuf='';
+let respQueue=[];
+let polling=null;
+let activeVFO='A';
+let splitOn=false,ritOn=false,xitOn=false,moxOn=false;
+let tunerState=0,ampState=0,attState=0,agcState=4;
+let nbOn=false,nrOn=false,lockOn=false,scanOn=false;
+let freqA=14200000,freqB=7100000;
+let modeA='2',modeB='2';
+let pwrPct=100;
+
+const MODES={'1':'LSB','2':'USB','3':'CW','4':'FM','5':'AM','6':'RTTY',
+  '7':'CW-R','8':'DATA-L','9':'RTTY-U','A':'DATA-F','B':'FM-N',
+  'C':'DATA-U','D':'AM-N','E':'C4FM'};
+const AGC_LABELS=['OFF','FAST','MID','SLOW','AUTO'];
+const AMP_LABELS=['IPO','AMP1','AMP2'];
+
+// ── Serial ───────────────────────────────────────────────────
+async function toggleConnect(){
+  port ? doDisconnect() : doConnect();
+}
+async function doConnect(){
+  if(!navigator.serial){showBanner('Web Serial not supported. Use Chrome or Edge.');return;}
+  try{
+    port=await navigator.serial.requestPort();
+    const baud=parseInt(document.getElementById('baud').value);
+    await port.open({baudRate:baud,dataBits:8,stopBits:1,parity:'none'});
+    reader=port.readable.getReader();
+    writer=port.writable.getWriter();
+    readBuf='';
+    updateConnUI(true);
+    readLoop();
+    await sleep(200);
+    await initRadio();
+    startPolling();
+  }catch(e){
+    port=null;
+    if(e.name==='NotFoundError')return;
+    const m=e.message||'';
+    if(m.toLowerCase().includes('access')||e.name==='NetworkError'){
+      showBanner('Port access denied — may be in use by WSJT-X or another program.');
+    }else{
+      showBanner('Connection failed: '+m);
+    }
+  }
+}
+async function doDisconnect(){
+  stopPolling();
+  try{if(reader){await reader.cancel();reader=null;}}catch(e){}
+  try{if(writer){writer.releaseLock();writer=null;}}catch(e){}
+  try{if(port){await port.close();port=null;}}catch(e){}
+  updateConnUI(false);
+}
+
+async function autoDetect(){
+  if(!navigator.serial){showBanner('Web Serial not supported.');return;}
+  const btn=document.getElementById('auto-btn');
+  btn.disabled=true;btn.textContent='Scanning...';
+  hideBanner();
+  let ports=[];
+  try{ports=await navigator.serial.getPorts();}catch(e){}
+  if(!ports.length){
+    showBanner('No known ports. Click "Connect" to select manually, then try Auto-detect again.');
+    btn.disabled=false;btn.textContent='Auto-detect';return;
+  }
+  const baud=parseInt(document.getElementById('baud').value);
+  setMsg(`Scanning ${ports.length} port(s)...`);
+  for(const p of ports){
+    let tr=null,tw=null;
+    try{
+      await p.open({baudRate:baud,dataBits:8,stopBits:1,parity:'none'});
+      tr=p.readable.getReader();tw=p.writable.getWriter();
+      await tw.write(new TextEncoder().encode('ID;'));
+      const resp=await Promise.race([readOne(tr),new Promise((_,rej)=>setTimeout(()=>rej(new Error('to')),1500))]);
+      await tr.cancel();tr=null;tw.releaseLock();tw=null;await p.close();
+      if(resp&&resp.startsWith('ID0670')){
+        port=p;
+        await port.open({baudRate:baud,dataBits:8,stopBits:1,parity:'none'});
+        reader=port.readable.getReader();writer=port.writable.getWriter();
+        readBuf='';updateConnUI(true);readLoop();
+        await sleep(200);await initRadio();startPolling();
+        btn.disabled=false;btn.textContent='Auto-detect';
+        setMsg('FT-991A detected and connected — '+timeStamp());return;
+      }
+    }catch(e){
+    }finally{
+      try{if(tr)await tr.cancel();}catch(e){}
+      try{if(tw)tw.releaseLock();}catch(e){}
+      try{if(p.readable||p.writable)await p.close();}catch(e){}
+    }
+  }
+  btn.disabled=false;btn.textContent='Auto-detect';
+  showBanner(`FT-991A not found on ${ports.length} port(s). Check cable/baud, or connect manually.`);
+  setMsg('Auto-detect: FT-991A not found',true);
+}
+
+function readOne(r){
+  return new Promise(async(res,rej)=>{
+    const dec=new TextDecoder();let buf='';
+    try{while(true){const{value,done}=await r.read();if(done)break;buf+=dec.decode(value);const i=buf.indexOf(';');if(i!==-1){res(buf.slice(0,i+1));return;}}}catch(e){rej(e);}
+  });
+}
+
+async function readLoop(){
+  const dec=new TextDecoder();
+  try{
+    while(reader){
+      const{value,done}=await reader.read();if(done)break;
+      readBuf+=dec.decode(value);
+      let i;
+      while((i=readBuf.indexOf(';'))!==-1){
+        const r=readBuf.slice(0,i+1);readBuf=readBuf.slice(i+1);
+        if(respQueue.length)respQueue.shift()(r);
+        else handleUnsolicited(r);
+      }
+    }
+  }catch(e){}
+}
+
+function waitResp(ms=2000){
+  return new Promise((res,rej)=>{
+    const t=setTimeout(()=>{const i=respQueue.indexOf(cb);if(i>=0)respQueue.splice(i,1);rej(new Error('timeout'));},ms);
+    const cb=r=>{clearTimeout(t);res(r);};
+    respQueue.push(cb);
+  });
+}
+
+async function catCmd(cmd){
+  if(!writer)return;
+  await writer.write(new TextEncoder().encode(cmd));
+}
+
+async function catQuery(cmd,ms=1500){
+  if(!writer)return null;
+  await writer.write(new TextEncoder().encode(cmd));
+  try{return await waitResp(ms);}catch(e){return null;}
+}
+
+// ── Init & Polling ───────────────────────────────────────────
+async function initRadio(){
+  setMsg('Reading radio state...');
+  // Read IF (full info)
+  const r=await catQuery('IF;',2000);
+  if(r)parseIF(r);
+  // Read VFO B
+  const fb=await catQuery('FB;',1000);
+  if(fb&&fb.startsWith('FB')){freqB=parseInt(fb.substring(2,11));renderFreq('B',freqB);}
+  // Read power
+  const pc=await catQuery('PC;',1000);
+  if(pc&&pc.startsWith('PC')){pwrPct=parseInt(pc.substring(2,5));document.getElementById('pwrSlider').value=pwrPct;document.getElementById('pwrVal').textContent=pwrPct+'W';}
+  // Read AF gain
+  const ag=await catQuery('AG0;',1000);
+  if(ag&&ag.startsWith('AG')){const v=parseInt(ag.substring(3,6));document.getElementById('afSlider').value=v;document.getElementById('afVal').textContent=v;}
+  // Read RF gain
+  const rg=await catQuery('RG0;',1000);
+  if(rg&&rg.startsWith('RG')){const v=parseInt(rg.substring(3,6));document.getElementById('rfSlider').value=v;document.getElementById('rfVal').textContent=v;}
+  setMsg('Ready — '+timeStamp());
+}
+
+function startPolling(){
+  stopPolling();
+  polling=setInterval(pollMeters,300);
+}
+function stopPolling(){if(polling){clearInterval(polling);polling=null;}}
+
+let _pollBusy=false;
+async function pollMeters(){
+  if(!writer||_pollBusy)return;
+  _pollBusy=true;
+  try{
+    // S-meter
+    const sm=await catQuery('SM0;',800);
+    if(sm&&sm.startsWith('SM')){updateSmeter(parseInt(sm.substring(3,6)));}
+    // IF for freq/mode/TX
+    const info=await catQuery('IF;',1000);
+    if(info)parseIF(info);
+    // TX meters (only if TX)
+    if(moxOn){
+      const po=await catQuery('RM5;',600);
+      if(po&&po.startsWith('RM')){const v=parseInt(po.substring(3,6));setMiniMeter('Pwr',v,255,Math.round(v/2.55)+'W');}
+      const alc=await catQuery('RM4;',600);
+      if(alc&&alc.startsWith('RM')){const v=parseInt(alc.substring(3,6));setMiniMeter('Alc',v,255,'');}
+      const swr=await catQuery('RM6;',600);
+      if(swr&&swr.startsWith('RM')){const v=parseInt(swr.substring(3,6));setMiniMeter('Swr',v,255,(1+(v/255)*4).toFixed(1));}
+    }
+  }catch(e){}
+  _pollBusy=false;
+}
+
+// ── Parsers ──────────────────────────────────────────────────
+function parseIF(r){
+  if(!r||r.length<31)return;
+  // IF: pos 2-4 mem, 5-13 freq, 14-18 clar+, 19 rxclar, 20 txclar, 21 mode, 22 vfo/mem, 23 ctcss, 24-25 p9, 26 offset, 27 p10
+  freqA=parseInt(r.substring(5,14));
+  modeA=r[21]||'2';
+  const txState=r.length>28?r[28]:'0'; // TX status from TX command return
+  // offset direction
+  const offsetDir=r[26]||'0';
+  renderFreq('A',freqA);
+  updateModeButtons(modeA);
+  document.getElementById('modeA').textContent=MODES[modeA]||modeA;
+  updateStatusBar();
+  // Check TX from MX
+}
+
+// ── Frequency rendering ──────────────────────────────────────
+function renderFreq(vfo,hz){
+  const el=document.getElementById('dig'+vfo);
+  el.innerHTML='';
+  // Format: 000.000.000 Hz → show as 3 groups
+  const s=String(hz).padStart(9,'0');
+  // groups: MHz(3), kHz(3), Hz(3)
+  const mhz=s.substring(0,3);
+  const khz=s.substring(3,6);
+  const hz3=s.substring(6,9);
+
+  // MHz digits (large)
+  mhz.split('').forEach((c,i)=>{
+    const d=document.createElement('span');
+    d.className='dig';d.textContent=c;
+    d.dataset.vfo=vfo;d.dataset.step=[100000000,10000000,1000000][i];
+    d.addEventListener('wheel',onDigWheel,{passive:false});
+    el.appendChild(d);
+  });
+  // dot
+  const d1=document.createElement('span');d1.className='d-sep';d1.textContent='.';el.appendChild(d1);
+  // kHz digits (large)
+  khz.split('').forEach((c,i)=>{
+    const d=document.createElement('span');
+    d.className='dig';d.textContent=c;
+    d.dataset.vfo=vfo;d.dataset.step=[100000,10000,1000][i];
+    d.addEventListener('wheel',onDigWheel,{passive:false});
+    el.appendChild(d);
+  });
+  // dot
+  const d2=document.createElement('span');d2.className='d-sep';d2.textContent='.';el.appendChild(d2);
+  // Hz digits (smaller)
+  hz3.split('').forEach((c,i)=>{
+    const d=document.createElement('span');
+    d.className='dig dim';d.textContent=c;
+    d.dataset.vfo=vfo;d.dataset.step=[100,10,1][i];
+    d.addEventListener('wheel',onDigWheel,{passive:false});
+    el.appendChild(d);
+  });
+  // MHz label
+  const u=document.createElement('span');
+  u.style.cssText='font-size:11px;color:var(--text3);margin-left:4px;align-self:flex-end;margin-bottom:5px';
+  u.textContent='MHz';el.appendChild(u);
+}
+
+function onDigWheel(e){
+  e.preventDefault();
+  if(!writer)return;
+  const step=parseInt(e.currentTarget.dataset.step)||100;
+  const vfo=e.currentTarget.dataset.vfo;
+  const dir=e.deltaY<0?1:-1;
+  if(vfo==='A'){
+    freqA=Math.max(30000,Math.min(470000000,freqA+dir*step));
+    renderFreq('A',freqA);
+    catCmd('FA'+String(freqA).padStart(9,'0')+';');
+  }else{
+    freqB=Math.max(30000,Math.min(470000000,freqB+dir*step));
+    renderFreq('B',freqB);
+    catCmd('FB'+String(freqB).padStart(9,'0')+';');
+  }
+  updateStatusBar();
+  highlightActiveBand();
+}
+
+// ── S-meter ──────────────────────────────────────────────────
+function buildSmeter(){
+  const c=document.getElementById('smSegs');c.innerHTML='';
+  // 13 segments: S1,2,3,4,5,6,7,8,9,+20,+40,+60dB
+  const heights=[30,36,42,48,55,62,70,78,88,90,92,95,98];
+  const colors=['var(--s-green)','var(--s-green)','var(--s-green)','var(--s-green)',
+    'var(--s-green)','var(--s-green)','var(--s-green)','var(--s-green)','var(--s-green)',
+    'var(--s-amber)','var(--s-amber)','var(--s-red)','var(--s-red)'];
+  heights.forEach((h,i)=>{
+    const s=document.createElement('div');
+    s.className='seg';s.style.height=h+'%';s.style.background=colors[i];
+    c.appendChild(s);
+  });
+}
+function updateSmeter(raw){
+  // SM0 returns 0-255, map to 0-13 segments
+  const lit=Math.round((raw/255)*13);
+  document.querySelectorAll('#smSegs .seg').forEach((s,i)=>{
+    s.classList.toggle('lit',i<lit);
+  });
+}
+
+// ── Mini meters ───────────────────────────────────────────────
+function setMiniMeter(name,raw,max,label){
+  const pct=Math.min(100,Math.round((raw/max)*100));
+  document.getElementById('fill'+name).style.width=pct+'%';
+  document.getElementById('val'+name).textContent=label||pct+'%';
+}
+
+// ── Unsolicited ───────────────────────────────────────────────
+function handleUnsolicited(r){
+  if(r.startsWith('IF'))parseIF(r);
+}
+
+// ── VFO / Mode controls ───────────────────────────────────────
+function setActiveVFO(vfo){
+  activeVFO=vfo;
+  document.getElementById('vfoA').classList.toggle('vfo-active',vfo==='A');
+  document.getElementById('vfoB').classList.toggle('vfo-active',vfo==='B');
+}
+function swapVFO(){catCmd('SV;');}
+function toggleSplit(){
+  splitOn=!splitOn;
+  document.getElementById('splitBtn').classList.toggle('on',splitOn);
+  document.getElementById('splitBadge').classList.toggle('show',splitOn);
+  catCmd(splitOn?'FT2;':'FT0;');
+}
+
+function setMode(m){
+  catCmd('MD0'+m+';');
+  modeA=m;
+  updateModeButtons(m);
+  document.getElementById('modeA').textContent=MODES[m]||m;
+  updateStatusBar();
+}
+function updateModeButtons(m){
+  document.querySelectorAll('.mb').forEach(b=>b.classList.toggle('on',b.dataset.mode===m));
+}
+
+function setBand(hz){
+  freqA=hz;
+  catCmd('FA'+String(hz).padStart(9,'0')+';');
+  renderFreq('A',freqA);
+  highlightActiveBand();
+  updateStatusBar();
+}
+function highlightActiveBand(){
+  const bands=[[1800000,2000000,'160m'],[3500000,4000000,'80m'],
+    [7000000,7300000,'40m'],[10100000,10150000,'30m'],
+    [14000000,14350000,'20m'],[18068000,18168000,'17m'],
+    [21000000,21450000,'15m'],[24890000,24990000,'12m'],
+    [28000000,29700000,'10m'],[50000000,54000000,'6m'],
+    [144000000,148000000,'2m'],[430000000,440000000,'70cm']];
+  document.querySelectorAll('.bb').forEach(b=>{
+    const band=bands.find(([lo,hi,lbl])=>lbl===b.textContent);
+    b.classList.toggle('on',band&&freqA>=band[0]&&freqA<=band[1]);
+  });
+}
+
+// ── TX controls ───────────────────────────────────────────────
+function toggleMOX(){
+  moxOn=!moxOn;
+  catCmd(moxOn?'MX1;':'MX0;');
+  document.getElementById('moxBtn').classList.toggle('tx',moxOn);
+  document.getElementById('moxBtn').textContent=moxOn?'TX':'MOX';
+  document.getElementById('txBadge').classList.toggle('show',moxOn);
+  if(!moxOn){
+    setMiniMeter('Pwr',0,255,'– W');
+    setMiniMeter('Alc',0,255,'–');
+    setMiniMeter('Swr',0,255,'–');
+  }
+}
+function setPower(v){
+  document.getElementById('pwrVal').textContent=v+'W';
+  catCmd('PC'+String(v).padStart(3,'0')+';');
+}
+function toggleTuner(){
+  tunerState=(tunerState+1)%2;
+  const lbl=['OFF','ON'][tunerState];
+  document.getElementById('tunerBtn').textContent=lbl;
+  document.getElementById('tunerBtn').classList.toggle('on',tunerState>0);
+  catCmd('AC0'+(tunerState>0?'1':'0')+'0;');
+}
+function cycleAmp(){
+  ampState=(ampState+1)%3;
+  const lbl=AMP_LABELS[ampState];
+  document.getElementById('ampBtn').textContent=lbl;
+  document.getElementById('ampBtn').classList.toggle('on',ampState>0);
+  catCmd('PA0'+ampState+';');
+}
+function toggleATT(){
+  attState=attState?0:1;
+  document.getElementById('attBtn').textContent=attState?'ON':'OFF';
+  document.getElementById('attBtn').classList.toggle('on',!!attState);
+  catCmd('RA0'+attState+';');
+}
+function cycleAGC(){
+  agcState=(agcState+1)%5;
+  document.getElementById('agcBtn').textContent=AGC_LABELS[agcState];
+  catCmd('GT0'+agcState+';');
+}
+
+// ── RIT / XIT ─────────────────────────────────────────────────
+function toggleRIT(){
+  ritOn=!ritOn;
+  document.getElementById('ritBtn').classList.toggle('on',ritOn);
+  catCmd(ritOn?'RT1;':'RT0;');
+}
+function toggleXIT(){
+  xitOn=!xitOn;
+  document.getElementById('xitBtn').classList.toggle('on',xitOn);
+  catCmd(xitOn?'XT1;':'XT0;');
+}
+function setRIT(v){
+  v=parseInt(v);
+  document.getElementById('ritVal').textContent=(v>=0?'+':'')+v+' Hz';
+  const abs=Math.abs(v).toString().padStart(4,'0');
+  const dir=v>=0?'+':'-';
+  catCmd('IS0'+dir+abs+';');
+}
+function clearRIT(){
+  document.getElementById('ritSlider').value=0;
+  document.getElementById('ritVal').textContent='0 Hz';
+  catCmd('RC;');
+}
+
+// ── RX controls ───────────────────────────────────────────────
+function setAF(v){document.getElementById('afVal').textContent=v;catCmd('AG0'+String(v).padStart(3,'0')+';');}
+function setRF(v){document.getElementById('rfVal').textContent=v;catCmd('RG0'+String(v).padStart(3,'0')+';');}
+function setMIC(v){document.getElementById('mgVal').textContent=v;catCmd('MG'+String(v).padStart(3,'0')+';');}
+function toggleNB(){nbOn=!nbOn;document.getElementById('nbBtn').classList.toggle('on',nbOn);catCmd('NB0'+(nbOn?'1':'0')+';');}
+function toggleNR(){nrOn=!nrOn;document.getElementById('nrBtn').classList.toggle('on',nrOn);catCmd('NR0'+(nrOn?'1':'0')+';');}
+function toggleLock(){lockOn=!lockOn;document.getElementById('lkBtn').classList.toggle('on',lockOn);catCmd('LK'+(lockOn?'1':'0')+';');}
+function toggleScan(){scanOn=!scanOn;document.getElementById('scBtn').classList.toggle('on',scanOn);catCmd('SC'+(scanOn?'1':'0')+';');}
+function sendMA(){catCmd('MA;');}
+
+// ── UI helpers ────────────────────────────────────────────────
+function updateConnUI(on){
+  document.getElementById('ndot').classList.toggle('on',on);
+  const btn=document.getElementById('conn-btn');
+  btn.textContent=on?'Disconnect':'Connect';
+  btn.className=on?'nbtn danger':'nbtn';
+  document.getElementById('nlbl').textContent=on?'FT-991A':'Not connected';
+}
+function showBanner(msg){document.getElementById('banner-txt').textContent=msg;document.getElementById('banner').classList.add('show');}
+function hideBanner(){document.getElementById('banner').classList.remove('show');}
+function setMsg(msg,err=false){const e=document.getElementById('st-msg');e.textContent=msg;e.className=err?'sbar-err':'sbar-ok';}
+function updateStatusBar(){
+  const mhz=(freqA/1e6).toFixed(6).replace(/\.?0+$/,'');
+  document.getElementById('st-freq').textContent='VFO-A: '+mhz+' MHz';
+  document.getElementById('st-mode').textContent='Mode: '+(MODES[modeA]||modeA);
+}
+function timeStamp(){
+  const d=new Date();
+  return d.toLocaleDateString([],{year:'numeric',month:'2-digit',day:'2-digit'})+' '+
+    d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false});
+}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+// ── Keyboard ─────────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT')return;
+  if(e.key==='Escape')hideBanner();
+  if(e.key===' '){e.preventDefault();toggleMOX();}
+});
+
+// ── Init ──────────────────────────────────────────────────────
+(function(){
+  buildSmeter();
+  renderFreq('A',freqA);
+  renderFreq('B',freqB);
+  highlightActiveBand();
+  updateModeButtons(modeA);
+  updateStatusBar();
+  if(!navigator.serial){
+    showBanner('Web Serial API not supported — use Chrome or Edge.');
+    document.getElementById('conn-btn').disabled=true;
+    document.getElementById('auto-btn').disabled=true;
+  }
+})();
+</script>
+</body>
+</html>
