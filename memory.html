@@ -421,6 +421,8 @@ function readOne(r){
     }catch(e){rej(e);}
   });
 }
+
+async function toggleConnect(){
   port ? doDisconnect() : doConnect();
 }
 async function doConnect(){
