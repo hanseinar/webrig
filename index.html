@@ -3,169 +3,181 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WebRig</title>
+<title>WebRig – Remote Radio Control</title>
 <style>
 :root{
-  --bg:#141412;--bg2:#1c1c1a;--bg3:#242422;--bg4:#2e2e2b;
-  --text:#e8e8e4;--text2:#8a8a84;--text3:#555;
+  --bg:#141412;--bg2:#1c1c1a;--bg3:#242422;
+  --text:#e8e8e4;--text2:#8a8a84;--text3:#4a4a46;
   --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
-  --accent:#4d8ef7;--accent-bg:rgba(77,142,247,0.12);
-  --green:#4ade80;--green-bg:rgba(74,222,128,0.1);
-  --amber:#fbbf24;--amber-bg:rgba(251,191,36,0.1);
-  --r-md:8px;--r-lg:14px;--r-xl:18px;
+  --accent:#4d8ef7;--accent-bg:rgba(77,142,247,0.12);--accent-border:rgba(77,142,247,0.3);
+  --green:#4ade80;--green-bg:rgba(74,222,128,0.1);--green-border:rgba(74,222,128,0.25);
+  --amber:#fbbf24;--amber-bg:rgba(251,191,36,0.08);--amber-border:rgba(251,191,36,0.2);
+  --r-md:8px;--r-lg:14px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
-
-/* Nav */
-nav{display:flex;align-items:center;padding:14px 28px;border-bottom:0.5px solid var(--border);position:sticky;top:0;background:rgba(20,20,18,.85);backdrop-filter:blur(12px);z-index:10}
-.nav-logo{font-size:16px;font-weight:600;letter-spacing:-.4px;color:var(--text)}
-.nav-logo span{color:var(--accent);font-weight:700}
-.nav-links{display:flex;align-items:center;gap:4px;margin-left:28px}
-.nav-link{padding:5px 12px;border-radius:var(--r-md);font-size:13px;color:var(--text2);text-decoration:none;transition:all .15s}
-.nav-link:hover{color:var(--text);background:var(--bg3)}
-.nav-link.active{color:var(--text);background:var(--bg3)}
+html{min-height:100%;background:var(--bg)}
+body{color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column}
+nav{display:flex;align-items:center;padding:13px 28px;border-bottom:0.5px solid var(--border);background:rgba(20,20,18,.9);backdrop-filter:blur(16px);position:sticky;top:0;z-index:10}
+.nav-logo{font-size:16px;font-weight:700;letter-spacing:-.5px;color:var(--text);text-decoration:none}
+.nav-logo em{color:var(--accent);font-style:normal}
 .nav-spacer{flex:1}
-.nav-badge{font-size:11px;padding:2px 8px;border-radius:20px;border:0.5px solid var(--border2);color:var(--text3)}
-
-/* Hero */
-.hero{padding:64px 28px 48px;max-width:900px;margin:0 auto}
-.hero-eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:14px;font-weight:500}
-.hero-title{font-size:42px;font-weight:600;letter-spacing:-.8px;line-height:1.15;color:var(--text);margin-bottom:16px}
-.hero-title span{color:var(--accent)}
-.hero-sub{font-size:16px;color:var(--text2);line-height:1.7;max-width:520px;margin-bottom:32px}
-.hero-btns{display:flex;gap:10px;flex-wrap:wrap}
-.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:var(--r-md);font-size:14px;font-weight:500;text-decoration:none;transition:all .15s;cursor:pointer;border:none;font-family:inherit}
-.btn-primary{background:var(--accent);color:#fff}
-.btn-primary:hover{opacity:.88}
-.btn-outline{background:transparent;color:var(--text);border:0.5px solid var(--border2)}
-.btn-outline:hover{background:var(--bg3)}
-
-/* Cards grid */
-.section{padding:0 28px 56px;max-width:900px;margin:0 auto}
-.section-title{font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);margin-bottom:18px;font-weight:500}
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
-.card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r-lg);padding:20px;text-decoration:none;color:var(--text);transition:all .15s;display:flex;flex-direction:column;gap:10px}
-.card:hover{background:var(--bg3);border-color:var(--border2);transform:translateY(-1px)}
-.card-icon{width:36px;height:36px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center}
-.card-icon svg{opacity:.9}
-.icon-blue{background:var(--accent-bg)}
-.icon-green{background:var(--green-bg)}
-.icon-amber{background:var(--amber-bg)}
-.card-title{font-size:15px;font-weight:500}
-.card-desc{font-size:13px;color:var(--text2);line-height:1.6}
-.card-tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--text3);margin-top:auto;padding-top:6px}
-.tag-dot{width:6px;height:6px;border-radius:50%}
-.tag-dot-green{background:var(--green)}
-.tag-dot-amber{background:var(--amber)}
-.tag-dot-gray{background:var(--text3)}
-
-/* Info strip */
-.strip{background:var(--bg2);border-top:0.5px solid var(--border);border-bottom:0.5px solid var(--border);padding:14px 28px;display:flex;gap:28px;flex-wrap:wrap}
-.strip-item{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:6px}
-.strip-item svg{opacity:.5}
-
-/* Footer */
-footer{padding:20px 28px;border-top:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
-.foot-txt{font-size:12px;color:var(--text3)}
-.foot-link{font-size:12px;color:var(--accent);text-decoration:none;opacity:.8}
-.foot-link:hover{opacity:1}
+.nav-meta{font-size:12px;color:var(--text3)}
+.nav-meta a{color:var(--accent);text-decoration:none;opacity:.7}
+.nav-meta a:hover{opacity:1}
+.hero{padding:58px 28px 42px;max-width:860px;margin:0 auto;width:100%}
+.hero-tag{display:inline-flex;align-items:center;gap:7px;font-size:11px;color:var(--accent);letter-spacing:.07em;text-transform:uppercase;font-weight:500;margin-bottom:20px;padding:4px 11px;border:0.5px solid var(--accent-border);border-radius:20px;background:var(--accent-bg)}
+.hero-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+h1{font-size:36px;font-weight:600;letter-spacing:-.6px;line-height:1.2;margin-bottom:16px}
+h1 em{color:var(--accent);font-style:normal}
+.hero-lead{font-size:15px;color:var(--text2);line-height:1.75;max-width:530px;margin-bottom:16px}
+.hero-chips{display:flex;gap:14px;flex-wrap:wrap}
+.chip{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:5px}
+.chip svg{opacity:.35}
+hr{border:none;border-top:0.5px solid var(--border);max-width:860px;margin:0 auto;width:calc(100% - 56px)}
+.section{max-width:860px;margin:0 auto;width:100%;padding:34px 28px}
+.section-label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);font-weight:500;margin-bottom:18px}
+.radio-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:11px;margin-bottom:38px}
+.radio-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r-lg);padding:17px;cursor:pointer;transition:all .15s;position:relative;user-select:none}
+.radio-card:hover:not(.disabled){background:var(--bg3);border-color:var(--border2)}
+.radio-card.selected{border-color:var(--accent-border);background:var(--accent-bg)}
+.radio-card.disabled{opacity:.38;cursor:not-allowed}
+.rc-band{font-size:11px;color:var(--text3);margin-bottom:7px}
+.rc-name{font-size:14px;font-weight:500;color:var(--text);margin-bottom:3px}
+.rc-maker{font-size:12px;color:var(--text2)}
+.rc-status{display:inline-flex;align-items:center;gap:5px;font-size:11px;margin-top:11px;padding:2px 8px;border-radius:20px}
+.st-ok{background:var(--green-bg);color:var(--green);border:0.5px solid var(--green-border)}
+.st-soon{background:var(--amber-bg);color:var(--amber);border:0.5px solid var(--amber-border)}
+.st-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.rc-check{position:absolute;top:13px;right:13px;width:17px;height:17px;border-radius:50%;background:var(--accent);display:none;align-items:center;justify-content:center}
+.radio-card.selected .rc-check{display:flex}
+.tools-wrap{animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.tools-hdr{font-size:13px;color:var(--text2);margin-bottom:15px}
+.tools-hdr strong{color:var(--text);font-weight:500}
+.tool-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:11px}
+.tool-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r-lg);padding:17px 19px;text-decoration:none;color:var(--text);transition:all .15s;display:flex;flex-direction:column;gap:8px}
+.tool-card:hover:not(.tc-disabled){background:var(--bg3);border-color:var(--border2);transform:translateY(-1px)}
+.tc-disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
+.tc-icon{width:32px;height:32px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center}
+.ic-b{background:var(--accent-bg)}
+.ic-a{background:var(--amber-bg)}
+.ic-g{background:var(--green-bg)}
+.tc-name{font-size:14px;font-weight:500}
+.tc-desc{font-size:12px;color:var(--text2);line-height:1.6}
+.tc-foot{font-size:11px;color:var(--text3);margin-top:auto;padding-top:4px;display:flex;align-items:center;gap:5px}
+.tfd{width:5px;height:5px;border-radius:50%}
+.tfd-g{background:var(--green)}.tfd-a{background:var(--amber)}.tfd-x{background:var(--text3)}
+footer{margin-top:auto;padding:16px 28px;border-top:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.ft{font-size:12px;color:var(--text3)}
+.fl{font-size:12px;color:var(--accent);text-decoration:none;opacity:.6}
+.fl:hover{opacity:1}
 </style>
 </head>
 <body>
-
 <nav>
-  <span class="nav-logo">Web<span>Rig</span></span>
-  <div class="nav-links">
-    <a class="nav-link active" href="index.html">Home</a>
-    <a class="nav-link" href="memory.html">Memory Channels</a>
-  </div>
+  <a class="nav-logo" href="index.html">Web<em>Rig</em></a>
   <div class="nav-spacer"></div>
-  <span class="nav-badge">FT-991A</span>
+  <span class="nav-meta"><a href="https://github.com/hanseinar/webrig" target="_blank">github.com/hanseinar/webrig</a></span>
 </nav>
 
 <div class="hero">
-  <div class="hero-eyebrow">Amateur Radio Remote Control</div>
-  <h1 class="hero-title">Control your radio<br>from any <span>browser</span></h1>
-  <p class="hero-sub">WebRig gives you full CAT control of your Yaesu FT-991A directly from Chrome or Edge — no installation required. Works over LAN, VPN, or locally on the radio machine.</p>
-  <div class="hero-btns">
-    <a class="btn btn-primary" href="memory.html">
-      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 5h6M5 8h6M5 11h4"/></svg>
-      Memory Channels
-    </a>
-    <a class="btn btn-outline" href="https://github.com/hanseinar/webrig" target="_blank">
-      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38l-.01-1.49c-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.68 7.68 0 012 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48l-.01 2.2c0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-      GitHub
-    </a>
+  <div class="hero-tag"><span class="hero-dot"></span>Amateur Radio Remote Control</div>
+  <h1>Full CAT control<br>from any <em>browser</em></h1>
+  <p class="hero-lead">WebRig gives you remote control of your amateur radio transceiver directly from Chrome or Edge — no software to install. Program memory channels, control the VFO, monitor S-meter readings and stream audio, all from a browser tab. Works over LAN, VPN, or locally on the radio machine.</p>
+  <div class="hero-chips">
+    <span class="chip"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M5.5 8l2 2 3-3"/></svg>No installation</span>
+    <span class="chip"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="4" width="14" height="9" rx="1.5"/><path d="M5 4V3h6v1"/></svg>Windows · Linux · macOS · ChromeOS</span>
+    <span class="chip"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h3l2-5 3 10 2-5h2"/></svg>Chrome / Edge (Web Serial API)</span>
+    <span class="chip"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1l1.5 4.5H15l-4.5 3 1.5 4.5L8 10.5 4 13l1.5-4.5L1 5.5h5.5z"/></svg>Open source — LA8DKA</span>
   </div>
 </div>
 
-<div class="strip">
-  <div class="strip-item">
-    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
-    No installation required
-  </div>
-  <div class="strip-item">
-    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 8h3l2-5 3 10 2-5h2"/></svg>
-    Web Serial API — Chrome / Edge only
-  </div>
-  <div class="strip-item">
-    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="4" width="14" height="9" rx="1.5"/><path d="M5 4V3a1 1 0 011-1h4a1 1 0 011 1v1"/></svg>
-    Works on Windows, Linux, macOS, ChromeOS
-  </div>
-  <div class="strip-item">
-    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 8a5 5 0 1010 0A5 5 0 003 8zM8 3v1M8 12v1M3 8H2M14 8h-1"/></svg>
-    Open source — LA8DKA
-  </div>
-</div>
+<hr>
 
-<div class="section" style="padding-top:40px">
-  <div class="section-title">Tools</div>
-  <div class="cards">
-
-    <a class="card" href="memory.html">
-      <div class="card-icon icon-blue">
-        <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#4d8ef7" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 5h6M5 8h6M5 11h4"/></svg>
-      </div>
-      <div class="card-title">Memory Channels</div>
-      <div class="card-desc">Read, edit, and write all 99 memory channels. Full CTCSS, offset, and TAG support. Import/export CSV.</div>
-      <div class="card-tag"><span class="tag-dot tag-dot-green"></span>Available</div>
-    </a>
-
-    <div class="card" style="opacity:.5;cursor:not-allowed">
-      <div class="card-icon icon-amber">
-        <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#fbbf24" stroke-width="1.5"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.5 3.5l1.4 1.4M11.1 11.1l1.4 1.4M3.5 12.5l1.4-1.4M11.1 4.9l1.4-1.4"/></svg>
-      </div>
-      <div class="card-title">VFO Control</div>
-      <div class="card-desc">Frequency, mode, band switching and real-time S-meter display.</div>
-      <div class="card-tag"><span class="tag-dot tag-dot-amber"></span>Coming soon</div>
+<div class="section">
+  <div class="section-label">Select your radio</div>
+  <div class="radio-grid">
+    <div class="radio-card" id="rc-ft991a" onclick="sel('ft991a')">
+      <div class="rc-check"><svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="white" stroke-width="2"><path d="M1.5 5l2.5 2.5 4.5-4.5"/></svg></div>
+      <div class="rc-band">HF / 6m / 2m / 70cm</div>
+      <div class="rc-name">FT-991A</div>
+      <div class="rc-maker">Yaesu</div>
+      <div class="rc-status st-ok"><span class="st-dot"></span>Supported</div>
     </div>
-
-    <div class="card" style="opacity:.5;cursor:not-allowed">
-      <div class="card-icon icon-amber">
-        <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#fbbf24" stroke-width="1.5"><path d="M2 11V6a6 6 0 0112 0v5"/><path d="M2 11a2 2 0 002 2h8a2 2 0 002-2"/><line x1="8" y1="14" x2="8" y2="16"/></svg>
-      </div>
-      <div class="card-title">Audio / PTT</div>
-      <div class="card-desc">RX audio streaming and TX with microphone input and PTT control.</div>
-      <div class="card-tag"><span class="tag-dot tag-dot-amber"></span>Coming soon</div>
+    <div class="radio-card disabled">
+      <div class="rc-band">HF / 6m / 2m</div>
+      <div class="rc-name">IC-706 MkIIG</div>
+      <div class="rc-maker">Icom</div>
+      <div class="rc-status st-soon"><span class="st-dot"></span>Coming soon</div>
     </div>
-
-    <div class="card" style="opacity:.5;cursor:not-allowed">
-      <div class="card-icon icon-green">
-        <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#4ade80" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="1.5"/><path d="M4 7h2M4 9h5M10 7h2"/></svg>
-      </div>
-      <div class="card-title">Spectrum / Waterfall</div>
-      <div class="card-desc">Real-time panadapter display and waterfall visualization.</div>
-      <div class="card-tag"><span class="tag-dot tag-dot-gray"></span>Planned</div>
+    <div class="radio-card disabled">
+      <div class="rc-band">HF / 6m</div>
+      <div class="rc-name">X6100</div>
+      <div class="rc-maker">Xiegu</div>
+      <div class="rc-status st-soon"><span class="st-dot"></span>Coming soon</div>
     </div>
-
+    <div class="radio-card disabled">
+      <div class="rc-band">HF (QRP)</div>
+      <div class="rc-name">QMX+</div>
+      <div class="rc-maker">QRP Labs</div>
+      <div class="rc-status st-soon"><span class="st-dot"></span>Coming soon</div>
+    </div>
+    <div class="radio-card disabled">
+      <div class="rc-band">HF (QRP)</div>
+      <div class="rc-name">QDX / tr-uSDX</div>
+      <div class="rc-maker">QRP Labs / DL2MAN</div>
+      <div class="rc-status st-soon"><span class="st-dot"></span>Coming soon</div>
+    </div>
   </div>
+
+  <div id="tools-area"></div>
 </div>
 
 <footer>
-  <span class="foot-txt">WebRig — LA8DKA — Yaesu FT-991A CAT control via Web Serial API</span>
-  <a class="foot-link" href="https://github.com/hanseinar/webrig" target="_blank">github.com/hanseinar/webrig</a>
+  <span class="ft">WebRig — LA8DKA — CAT control via Web Serial API</span>
+  <a class="fl" href="https://github.com/hanseinar/webrig" target="_blank">GitHub</a>
 </footer>
 
+<script>
+const RADIOS={
+  ft991a:{
+    label:'Yaesu FT-991A',
+    tools:[
+      {name:'Memory Channels',desc:'Read, edit and write all 99 memory channels. Full CTCSS, offset frequency and TAG support. Import / export CSV.',href:'ft991a_memory.html',ic:'b',st:'ok',svg:'<rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 5h6M5 8h6M5 11h4"/>',col:'#4d8ef7'},
+      {name:'VFO Control',desc:'Frequency tuning, mode selection, band switching and real-time S-meter display.',href:'#',ic:'a',st:'soon',svg:'<circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2"/>',col:'#fbbf24'},
+      {name:'Audio / PTT',desc:'RX audio streaming and TX with microphone input and PTT control.',href:'#',ic:'a',st:'soon',svg:'<path d="M8 1a3 3 0 013 3v4a3 3 0 01-6 0V4a3 3 0 013-3z"/><path d="M3 9a5 5 0 0010 0M8 14v2"/>',col:'#fbbf24'},
+      {name:'Spectrum / Waterfall',desc:'Real-time panadapter and waterfall visualization.',href:'#',ic:'g',st:'plan',svg:'<path d="M2 12l3-5 3 3 2-6 3 4"/><line x1="2" y1="14" x2="14" y2="14"/>',col:'#4ade80'}
+    ]
+  }
+};
+const stLabel={ok:'Available',soon:'Coming soon',plan:'Planned'};
+const stDot={ok:'tfd-g',soon:'tfd-a',plan:'tfd-x'};
+
+function sel(id){
+  if(!RADIOS[id])return;
+  document.querySelectorAll('.radio-card').forEach(c=>c.classList.remove('selected'));
+  const el=document.getElementById('rc-'+id);
+  if(el)el.classList.add('selected');
+  localStorage.setItem('webrig_radio',id);
+  const r=RADIOS[id];
+  document.getElementById('tools-area').innerHTML=`
+    <div class="tools-wrap">
+      <div class="tools-hdr">Tools for <strong>${r.label}</strong></div>
+      <div class="tool-grid">
+        ${r.tools.map(t=>`
+          <a class="tool-card ${t.st!=='ok'?'tc-disabled':''}" href="${t.href}">
+            <div class="tc-icon ic-${t.ic}">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="${t.col}" stroke-width="1.5">${t.svg}</svg>
+            </div>
+            <div class="tc-name">${t.name}</div>
+            <div class="tc-desc">${t.desc}</div>
+            <div class="tc-foot"><span class="tfd ${stDot[t.st]}"></span>${stLabel[t.st]}</div>
+          </a>`).join('')}
+      </div>
+    </div>`;
+}
+(function(){sel(localStorage.getItem('webrig_radio')||'ft991a');})();
+</script>
 </body>
 </html>
