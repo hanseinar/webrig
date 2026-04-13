@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WebRig – Memory Channels</title>
+<style>
+:root{
+  --bg:#ffffff;--bg2:#f8f8f7;--bg3:#f0f0ee;
+  --text:#1a1a18;--text2:#6b6b67;--text3:#aaa;
+  --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.2);
+  --accent:#1a6ef5;--accent-bg:#e8f0fe;--accent-text:#1a4db5;
+  --warn-bg:#fffbeb;--warn-border:rgba(160,100,0,0.2);--warn-text:#92600a;
+  --danger:#dc2626;--danger-bg:#fef2f2;
+  --success:#16a34a;--r-md:8px;--r-lg:12px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1c1c1a;--bg2:#242422;--bg3:#2e2e2b;
+  --text:#e4e4e0;--text2:#8a8a84;--text3:#555;
+  --border:rgba(255,255,255,0.09);--border2:rgba(255,255,255,0.16);
+  --accent:#4d8ef7;--accent-bg:#1a2a45;--accent-text:#7aacff;
+  --warn-bg:#2a2210;--warn-border:rgba(200,140,0,0.25);--warn-text:#e8b84a;
+  --danger:#f87171;--danger-bg:#2a1010;--success:#4ade80;
+}}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;background:var(--bg);color:var(--text);display:flex;flex-direction:column;height:100vh;overflow:hidden}
+
+/* Header */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 18px;border-bottom:0.5px solid var(--border);flex-shrink:0}
+.logo{font-size:15px;font-weight:500}.logo span{color:var(--text2);font-weight:400}
+.conn-row{display:flex;align-items:center;gap:8px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--text3);flex-shrink:0;transition:background .3s}
+.dot.on{background:#22c55e}
+.conn-lbl{font-size:12px;color:var(--text2)}
+
+/* Buttons */
+button{font-family:inherit;font-size:13px;cursor:pointer;border-radius:var(--r-md);border:0.5px solid var(--border2);background:transparent;color:var(--text);padding:5px 11px;transition:background .1s}
+button:hover{background:var(--bg3)}button:active{opacity:.8}
+.btn-primary{background:var(--text);color:var(--bg);border-color:transparent}
+.btn-primary:hover{opacity:.85;background:var(--text)}
+.btn-danger{color:var(--danger);border-color:rgba(220,38,38,.3)}
+.btn-danger:hover{background:var(--danger-bg)}
+button:disabled{opacity:.38;cursor:not-allowed;pointer-events:none}
+select{font-family:inherit;font-size:12px;padding:4px 7px;border-radius:var(--r-md);border:0.5px solid var(--border2);background:var(--bg);color:var(--text2);cursor:pointer}
+
+/* Banner */
+.banner{display:none;align-items:center;gap:10px;padding:8px 18px;border-bottom:0.5px solid var(--warn-border);background:var(--warn-bg);font-size:13px;color:var(--warn-text);flex-shrink:0}
+.banner.show{display:flex}
+.banner button{font-size:12px;padding:3px 9px;margin-left:auto;color:var(--warn-text);border-color:var(--warn-border)}
+
+/* Toolbar */
+.toolbar{display:flex;align-items:center;gap:6px;padding:9px 18px;border-bottom:0.5px solid var(--border);background:var(--bg2);flex-shrink:0;flex-wrap:wrap}
+.tsep{width:0.5px;height:18px;background:var(--border2);margin:0 2px}
+.spacer{flex:1}
+#search{padding:5px 10px;border-radius:var(--r-md);border:0.5px solid var(--border2);background:var(--bg);color:var(--text);font-size:13px;width:200px;font-family:inherit}
+#search:focus{outline:none;border-color:var(--accent)}
+
+/* Progress */
+.prog-wrap{display:none;padding:6px 18px;background:var(--bg2);border-bottom:0.5px solid var(--border);flex-shrink:0}
+.prog-wrap.show{display:block}
+.prog-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:var(--accent);width:0%;transition:width .15s}
+.prog-lbl{font-size:11px;color:var(--text2);margin-top:4px}
+
+/* Table */
+.tbl-wrap{flex:1;overflow:auto}
+table{width:100%;border-collapse:collapse}
+thead th{position:sticky;top:0;z-index:2;background:var(--bg2);padding:7px 12px;text-align:left;font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;border-bottom:0.5px solid var(--border);white-space:nowrap}
+tbody tr{border-bottom:0.5px solid var(--border);cursor:default;user-select:none}
+tbody tr:hover{background:var(--bg2)}
+tbody tr.sel{background:var(--accent-bg)}
+td{padding:7px 12px;font-size:13px;white-space:nowrap}
+td.ch{color:var(--text2);font-variant-numeric:tabular-nums;width:52px}
+td.freq{font-variant-numeric:tabular-nums;font-weight:500}
+td.empty-row{color:var(--text3);font-style:italic}
+.pill{display:inline-block;padding:1px 7px;border-radius:4px;font-size:11px;background:var(--bg3);border:0.5px solid var(--border)}
+.pill-minus{background:var(--accent-bg);color:var(--accent-text);border:none}
+.pill-plus{background:#ecfdf5;color:#059669;border:none}
+
+/* Context menu */
+.ctx{position:fixed;background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--r-lg);min-width:210px;padding:4px 0;z-index:500;display:none}
+.ctx.show{display:block}
+.ci{display:flex;align-items:center;gap:10px;padding:8px 14px;font-size:13px;cursor:pointer;color:var(--text)}
+.ci:hover{background:var(--bg2)}
+.ci.danger{color:var(--danger)}
+.ci.disabled{opacity:.35;pointer-events:none}
+.ci svg{opacity:.45;flex-shrink:0}
+.ck{margin-left:auto;font-size:11px;color:var(--text3)}
+.csep{height:0.5px;background:var(--border);margin:4px 0}
+
+/* Dialog */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:400;display:none;align-items:center;justify-content:center}
+.overlay.show{display:flex}
+.dlg{background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--r-lg);width:460px;max-width:96vw;overflow:hidden}
+.dlg-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:0.5px solid var(--border)}
+.dlg-title{font-size:15px;font-weight:500}
+.dlg-body{padding:18px;display:grid;gap:13px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:12px;color:var(--text2);font-weight:500}
+.field input,.field select{padding:7px 10px;border-radius:var(--r-md);border:0.5px solid var(--border2);background:var(--bg);color:var(--text);font-size:13px;font-family:inherit}
+.field input:focus,.field select:focus{outline:none;border-color:var(--accent)}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.frow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.field .hint{font-size:11px;color:var(--text3);margin-top:2px}
+.dlg-foot{display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:0.5px solid var(--border)}
+
+/* Status bar */
+.sbar{display:flex;align-items:center;gap:14px;padding:7px 18px;border-top:0.5px solid var(--border);background:var(--bg2);font-size:12px;color:var(--text2);flex-shrink:0}
+.sbar-ok{color:var(--success)}.sbar-err{color:var(--danger)}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="hdr">
+  <div class="logo">WebRig <span>/ Memory Channels</span></div>
+  <div class="conn-row">
+    <div class="dot" id="dot"></div>
+    <span class="conn-lbl" id="conn-lbl">Not connected</span>
+    <select id="baud" title="Baud rate">
+      <option value="38400" selected>38400</option>
+      <option value="19200">19200</option>
+      <option value="9600">9600</option>
+      <option value="4800">4800</option>
+    </select>
+    <button id="conn-btn" onclick="toggleConnect()">Connect</button>
+  </div>
+</div>
+
+<!-- Warning banner -->
+<div class="banner" id="banner">
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1.5l6.5 12H1.5L8 1.5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="none"/><line x1="8" y1="6.5" x2="8" y2="9.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.5" r=".7" fill="currentColor"/></svg>
+  <span id="banner-txt">COM port may be in use by another program (e.g. WSJT-X). Connection may fail.</span>
+  <button onclick="hideBanner()">Dismiss</button>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <button id="read-btn" onclick="readAllChannels()" disabled>Read from radio</button>
+  <button id="write-btn" onclick="writeAllChannels()" disabled>Write all to radio</button>
+  <div class="tsep"></div>
+  <button onclick="importCSV()">Import CSV</button>
+  <button onclick="exportCSV()">Export CSV</button>
+  <div class="spacer"></div>
+  <input id="search" type="text" placeholder="Search channel, freq, TAG..." oninput="renderTable()">
+</div>
+
+<!-- Progress -->
+<div class="prog-wrap" id="prog-wrap">
+  <div class="prog-bar"><div class="prog-fill" id="prog-fill"></div></div>
+  <div class="prog-lbl" id="prog-lbl">Working...</div>
+</div>
+
+<!-- Table -->
+<div class="tbl-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Ch</th><th>TAG / Name</th><th>Frequency</th><th>Mode</th>
+        <th>CTCSS</th><th>Offset Hz</th><th>Shift</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<!-- Context menu -->
+<div class="ctx" id="ctx">
+  <div class="ci" id="ci-new" onclick="ctxNew()">
+    <svg width="14" height="14" viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.5" fill="none"><line x1="8" y1="2" x2="8" y2="14"/><line x1="2" y1="8" x2="14" y2="8"/></svg>
+    New channel here
+  </div>
+  <div class="csep"></div>
+  <div class="ci" id="ci-edit" onclick="ctxEdit()">
+    <svg width="14" height="14" viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.4" fill="none"><path d="M11 2l3 3-8 8H3v-3l8-8z"/></svg>
+    Edit <span class="ck">Enter</span>
+  </div>
+  <div class="ci" id="ci-dup" onclick="ctxDuplicate()">
+    <svg width="14" height="14" viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.4" fill="none"><rect x="5" y="5" width="8" height="8" rx="1.5"/><path d="M3 11V3h8"/></svg>
+    Duplicate to next free <span class="ck">D</span>
+  </div>
+  <div class="csep"></div>
+  <div class="ci" id="ci-send" onclick="ctxSend()">
+    <svg width="14" height="14" viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.4" fill="none"><path d="M2 8h12M10 4l4 4-4 4"/></svg>
+    Send to radio (this channel)
+  </div>
+  <div class="csep"></div>
+  <div class="ci danger" id="ci-del" onclick="ctxDelete()">
+    <svg width="14" height="14" viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.4" fill="none"><path d="M3 4.5h10M6 4.5V3h4v1.5M5.5 4.5l.5 8h4l.5-8"/></svg>
+    Delete channel <span class="ck">Del</span>
+  </div>
+</div>
+
+<!-- Edit dialog -->
+<div class="overlay" id="overlay" onclick="overlayClick(event)">
+  <div class="dlg">
+    <div class="dlg-hdr">
+      <span class="dlg-title" id="dlg-title">Edit Channel</span>
+      <button onclick="hideDialog()">✕</button>
+    </div>
+    <div class="dlg-body">
+      <div class="frow">
+        <div class="field">
+          <label>Channel</label>
+          <input type="text" id="d-ch" readonly style="color:var(--text2)">
+        </div>
+        <div class="field">
+          <label>TAG / Name</label>
+          <input type="text" id="d-tag" maxlength="12" placeholder="e.g. LA5L rep">
+          <span class="hint">Max 12 characters</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Frequency (MHz)</label>
+        <input type="text" id="d-freq" placeholder="e.g. 145.725000">
+        <span class="hint">Range: 0.03 – 470 MHz</span>
+      </div>
+      <div class="frow">
+        <div class="field">
+          <label>Mode</label>
+          <select id="d-mode">
+            <option value="4">FM</option><option value="B">FM-N</option>
+            <option value="2">USB</option><option value="1">LSB</option>
+            <option value="5">AM</option><option value="D">AM-N</option>
+            <option value="3">CW</option><option value="7">CW-R</option>
+            <option value="8">DATA-LSB</option><option value="C">DATA-USB</option>
+            <option value="A">DATA-FM</option><option value="6">RTTY-LSB</option>
+            <option value="9">RTTY-USB</option><option value="E">C4FM</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Shift direction</label>
+          <select id="d-shift">
+            <option value="0">Simplex</option>
+            <option value="2">– Minus</option>
+            <option value="1">+ Plus</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="field">
+          <label>CTCSS tone</label>
+          <select id="d-ctcss"></select>
+          <span class="hint">Stored locally — not in radio memory</span>
+        </div>
+        <div class="field">
+          <label>CTCSS mode</label>
+          <select id="d-ctcss-mode">
+            <option value="0">Off</option>
+            <option value="2">ENC (TX only)</option>
+            <option value="1">ENC / DEC</option>
+            <option value="3">DCS ENC/DEC</option>
+            <option value="4">DCS ENC</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Offset frequency (Hz)</label>
+        <input type="number" id="d-offset" placeholder="e.g. 600000" min="0" step="1000">
+        <span class="hint">Stored locally — radio stores shift direction only</span>
+      </div>
+    </div>
+    <div class="dlg-foot">
+      <button onclick="hideDialog()">Cancel</button>
+      <button class="btn-primary" onclick="saveDialog()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Status bar -->
+<div class="sbar">
+  <span id="st-total">99 channels</span>
+  <span>·</span>
+  <span id="st-used">0 programmed</span>
+  <span>·</span>
+  <span style="font-size:11px;color:var(--text3)">CTCSS/offset stored locally in browser</span>
+  <div class="spacer"></div>
+  <span id="st-msg"></span>
+</div>
+
+<script>
+// ─── Constants ───────────────────────────────────────────────
+const CTCSS = [
+  {i:'000',hz:67.0},{i:'001',hz:69.3},{i:'002',hz:71.9},{i:'003',hz:74.4},
+  {i:'004',hz:77.0},{i:'005',hz:79.7},{i:'006',hz:82.5},{i:'007',hz:85.4},
+  {i:'008',hz:88.5},{i:'009',hz:91.5},{i:'010',hz:94.8},{i:'011',hz:97.4},
+  {i:'012',hz:100.0},{i:'013',hz:103.5},{i:'014',hz:107.2},{i:'015',hz:110.9},
+  {i:'016',hz:114.8},{i:'017',hz:118.8},{i:'018',hz:123.0},{i:'019',hz:127.3},
+  {i:'020',hz:131.8},{i:'021',hz:136.5},{i:'022',hz:141.3},{i:'023',hz:146.2},
+  {i:'024',hz:151.4},{i:'025',hz:156.7},{i:'026',hz:159.8},{i:'027',hz:162.2},
+  {i:'028',hz:165.5},{i:'029',hz:167.9},{i:'030',hz:171.3},{i:'031',hz:173.8},
+  {i:'032',hz:177.3},{i:'033',hz:179.9},{i:'034',hz:183.5},{i:'035',hz:186.2},
+  {i:'036',hz:189.9},{i:'037',hz:192.8},{i:'038',hz:196.6},{i:'039',hz:199.5},
+  {i:'040',hz:203.5},{i:'041',hz:206.5},{i:'042',hz:210.7},{i:'043',hz:218.1},
+  {i:'044',hz:225.7},{i:'045',hz:229.1},{i:'046',hz:233.6},{i:'047',hz:241.8},
+  {i:'048',hz:250.3},{i:'049',hz:254.1}
+];
+const MODES = {
+  '1':'LSB','2':'USB','3':'CW','4':'FM','5':'AM','6':'RTTY-LSB',
+  '7':'CW-R','8':'DATA-LSB','9':'RTTY-USB','A':'DATA-FM','B':'FM-N',
+  'C':'DATA-USB','D':'AM-N','E':'C4FM'
+};
+
+// ─── State ────────────────────────────────────────────────────
+let port=null, reader=null, writer=null, readBuf='';
+let respQueue=[];
+let editCh=null, selCh=null;
+
+const CH = Array.from({length:99},(_,i)=>({
+  num:i+1, empty:true, freq:0, mode:'4',
+  ctcss_mode:'0', ctcss_idx:'000',
+  offset_dir:'0', tag:'', offset_hz:0
+}));
+
+// ─── LocalStorage ─────────────────────────────────────────────
+function loadLocal(){
+  try{
+    const d=JSON.parse(localStorage.getItem('webrig_ch')||'[]');
+    d.forEach(s=>{
+      if(s&&s.n>=1&&s.n<=99){
+        CH[s.n-1].offset_hz=s.oh||0;
+        CH[s.n-1].ctcss_idx=s.ci||'000';
+      }
+    });
+  }catch(e){}
+}
+function saveLocal(){
+  const d=CH.map(c=>({n:c.num,oh:c.offset_hz,ci:c.ctcss_idx}));
+  localStorage.setItem('webrig_ch',JSON.stringify(d));
+}
+
+// ─── Serial ───────────────────────────────────────────────────
+async function toggleConnect(){
+  port ? doDisconnect() : doConnect();
+}
+async function doConnect(){
+  if(!navigator.serial){showBanner('Web Serial API not supported. Please use Chrome or Edge.');return;}
+  try{
+    port=await navigator.serial.requestPort();
+    const baud=parseInt(document.getElementById('baud').value);
+    await port.open({baudRate:baud,dataBits:8,stopBits:1,parity:'none'});
+    reader=port.readable.getReader();
+    writer=port.writable.getWriter();
+    readBuf='';
+    updateConnUI(true);
+    readLoop();
+  }catch(e){
+    port=null;
+    if(e.name==='NotFoundError')return;
+    const msg=e.message||'';
+    if(msg.toLowerCase().includes('access')||e.name==='NetworkError'){
+      showBanner('Port access denied — it may be in use by another program (WSJT-X, HRD, etc.).');
+    }else{
+      showBanner('Connection failed: '+msg);
+    }
+  }
+}
+async function doDisconnect(){
+  try{if(reader){await reader.cancel();reader=null;}}catch(e){}
+  try{if(writer){writer.releaseLock();writer=null;}}catch(e){}
+  try{if(port){await port.close();port=null;}}catch(e){}
+  updateConnUI(false);
+}
+function updateConnUI(on){
+  document.getElementById('dot').classList.toggle('on',on);
+  const btn=document.getElementById('conn-btn');
+  btn.textContent=on?'Disconnect':'Connect';
+  btn.className=on?'btn-danger':'';
+  document.getElementById('read-btn').disabled=!on;
+  document.getElementById('write-btn').disabled=!on;
+  if(on){
+    const info=port.getInfo();
+    document.getElementById('conn-lbl').textContent=
+      info.usbVendorId?`USB ${info.usbVendorId.toString(16).toUpperCase()} – FT-991A`:'Connected';
+  }else{
+    document.getElementById('conn-lbl').textContent='Not connected';
+  }
+}
+
+async function readLoop(){
+  const dec=new TextDecoder();
+  try{
+    while(reader){
+      const {value,done}=await reader.read();
+      if(done)break;
+      readBuf+=dec.decode(value);
+      let idx;
+      while((idx=readBuf.indexOf(';'))!==-1){
+        const resp=readBuf.slice(0,idx+1);
+        readBuf=readBuf.slice(idx+1);
+        if(respQueue.length){respQueue.shift()(resp);}
+      }
+    }
+  }catch(e){}
+}
+
+function waitResp(ms=2000){
+  return new Promise((res,rej)=>{
+    const t=setTimeout(()=>{
+      const i=respQueue.indexOf(cb);
+      if(i>=0)respQueue.splice(i,1);
+      rej(new Error('timeout'));
+    },ms);
+    const cb=r=>{clearTimeout(t);res(r);};
+    respQueue.push(cb);
+  });
+}
+
+async function send(cmd){
+  if(!writer)throw new Error('Not connected');
+  await writer.write(new TextEncoder().encode(cmd));
+}
+
+// ─── CAT parsing ──────────────────────────────────────────────
+// MT response format (0-indexed):
+// [0-1]  "MT"
+// [2-4]  channel number (3 digits) — NOTE: FT-991A returns CURRENT channel, we use loop index
+// [5-13] frequency Hz (9 digits)
+// [14-18] clarifier (+0000)
+// [19]   RX CLAR
+// [20]   TX CLAR
+// [21]   MODE
+// [22]   P7 (0=VFO,1=mem for read; 0=fixed for write)
+// [23]   CTCSS mode
+// [24-25] P9 "00"
+// [26]   offset direction (0=simplex,1=plus,2=minus)
+// [27]   P11 "0"
+// [28-39] TAG (12 chars, space-padded)
+// [40]   ";"
+function parseMT(resp, chNum){
+  if(!resp||resp.length<28)return null;
+  const s=resp.trim();
+  if(!s.startsWith('MT'))return null;
+  const freq=parseInt(s.substring(5,14));
+  if(!freq)return null; // empty channel
+  return{
+    num:chNum, empty:false, freq,
+    mode:s[21]||'4',
+    ctcss_mode:s[23]||'0',
+    offset_dir:s[26]||'0',
+    tag:s.length>=41?s.substring(28,40).trimEnd():''
+  };
+}
+
+function buildMT(ch){
+  const n=String(ch.num).padStart(3,'0');
+  const f=String(ch.freq).padStart(9,'0');
+  const tag=(ch.tag||'').substring(0,12).padEnd(12,' ');
+  // MT + ch(3) + freq(9) + clar(+0000) + rxclar(0) + txclar(0) + mode(1) + p7(0) + ctcss(1) + p9(00) + offset_dir(1) + p11(0) + tag(12) + ;
+  return `MT${n}${f}+0000000${ch.mode}0${ch.ctcss_mode}00${ch.offset_dir}0${tag};`;
+}
+
+// ─── Radio operations ─────────────────────────────────────────
+async function readAllChannels(){
+  showProg(true,'Reading channels from radio...');
+  for(let i=1;i<=99;i++){
+    try{
+      await send(`MT${String(i).padStart(3,'0')};`);
+      const resp=await waitResp(1500);
+      const parsed=parseMT(resp,i);
+      const ch=CH[i-1];
+      if(parsed){
+        ch.empty=false;ch.freq=parsed.freq;ch.mode=parsed.mode;
+        ch.ctcss_mode=parsed.ctcss_mode;ch.offset_dir=parsed.offset_dir;
+        ch.tag=parsed.tag;
+        // ctcss_idx and offset_hz preserved from localStorage
+      }else{
+        ch.empty=true;ch.freq=0;ch.tag='';ch.mode='4';
+        ch.ctcss_mode='0';ch.offset_dir='0';
+      }
+    }catch(e){CH[i-1].empty=true;}
+    setProg(i/99,`Reading channel ${i} / 99`);
+    await sleep(60);
+  }
+  showProg(false);
+  renderTable();
+  setMsg(`Read complete — ${timeNow()}`);
+}
+
+async function writeAllChannels(){
+  const toWrite=CH.filter(c=>!c.empty);
+  if(!toWrite.length){alert('No channels to write.');return;}
+  if(!confirm(`Write ${toWrite.length} channels to radio?`))return;
+  showProg(true,'Writing to radio...');
+  for(let i=0;i<toWrite.length;i++){
+    try{await send(buildMT(toWrite[i]));await sleep(100);}catch(e){}
+    setProg((i+1)/toWrite.length,`Writing channel ${toWrite[i].num}...`);
+  }
+  showProg(false);
+  saveLocal();
+  setMsg(`Written ${toWrite.length} channels — ${timeNow()}`);
+}
+
+async function writeSingle(chNum){
+  if(!port){alert('Not connected.');return;}
+  const ch=CH[chNum-1];
+  if(ch.empty){alert('Channel is empty.');return;}
+  try{
+    await send(buildMT(ch));
+    await sleep(100);
+    saveLocal();
+    setMsg(`Channel ${chNum} sent — ${timeNow()}`);
+  }catch(e){setMsg('Error: '+e.message,true);}
+}
+
+// ─── Render ───────────────────────────────────────────────────
+function renderTable(){
+  const q=document.getElementById('search').value.toLowerCase();
+  const tbody=document.getElementById('tbody');
+  tbody.innerHTML='';
+  let used=0;
+  CH.forEach(ch=>{
+    if(q){
+      const hay=`${String(ch.num).padStart(3,'0')} ${ch.tag} ${fmtFreq(ch.freq)}`.toLowerCase();
+      if(!hay.includes(q))return;
+    }
+    if(!ch.empty)used++;
+    const tr=document.createElement('tr');
+    if(selCh===ch.num)tr.classList.add('sel');
+    tr.dataset.ch=ch.num;
+    tr.addEventListener('contextmenu',e=>showCtx(e,ch.num));
+    tr.addEventListener('dblclick',()=>showDialog(ch.num));
+    tr.addEventListener('click',()=>{selCh=ch.num;renderTable();});
+    if(ch.empty){
+      tr.innerHTML=`<td class="ch">${pad3(ch.num)}</td><td colspan="6" class="empty-row">— empty —</td>`;
+    }else{
+      const tone=CTCSS.find(t=>t.i===ch.ctcss_idx);
+      const ctcss_str=ch.ctcss_mode!=='0'&&tone?`${tone.hz} Hz`:'–';
+      const off_str=ch.offset_hz?(ch.offset_hz>=1000?`${(ch.offset_hz/1000).toFixed(0)} kHz`:`${ch.offset_hz} Hz`):'–';
+      const sc=ch.offset_dir==='2'?'pill-minus':ch.offset_dir==='1'?'pill-plus':'pill';
+      const sl=ch.offset_dir==='2'?'–':ch.offset_dir==='1'?'+':'simplex';
+      tr.innerHTML=`
+        <td class="ch">${pad3(ch.num)}</td>
+        <td>${esc(ch.tag||'–')}</td>
+        <td class="freq">${fmtFreq(ch.freq)}</td>
+        <td><span class="pill">${MODES[ch.mode]||ch.mode}</span></td>
+        <td>${ctcss_str}</td>
+        <td>${off_str}</td>
+        <td><span class="pill ${sc}">${sl}</span></td>`;
+    }
+    tbody.appendChild(tr);
+  });
+  document.getElementById('st-used').textContent=`${used} programmed`;
+}
+
+// ─── Context menu ─────────────────────────────────────────────
+let _ctxCh=null;
+function showCtx(e,chNum){
+  e.preventDefault();
+  _ctxCh=chNum;selCh=chNum;
+  const ch=CH[chNum-1];
+  document.getElementById('ci-dup').classList.toggle('disabled',ch.empty);
+  document.getElementById('ci-send').classList.toggle('disabled',ch.empty||!port);
+  const menu=document.getElementById('ctx');
+  const x=Math.min(e.clientX,window.innerWidth-220);
+  const y=Math.min(e.clientY,window.innerHeight-220);
+  menu.style.left=x+'px';menu.style.top=y+'px';
+  menu.classList.add('show');
+  renderTable();
+}
+function hideCtx(){document.getElementById('ctx').classList.remove('show');}
+
+function ctxNew(){const c=_ctxCh;hideCtx();if(c)showDialog(c,true);}
+function ctxEdit(){const c=_ctxCh;hideCtx();if(c)showDialog(c);}
+function ctxDuplicate(){
+  const c=_ctxCh;hideCtx();if(!c)return;
+  const src=CH[c-1];if(src.empty)return;
+  const free=CH.find(x=>x.empty);
+  if(!free){alert('No free channels.');return;}
+  const n=free.num;
+  Object.assign(free,{...src,num:n,empty:false});
+  renderTable();
+  setMsg(`Duplicated ch ${c} → ch ${n}`);
+  showDialog(n);
+}
+function ctxSend(){const c=_ctxCh;hideCtx();if(c)writeSingle(c);}
+function ctxDelete(){
+  const c=_ctxCh;hideCtx();if(!c)return;
+  if(!confirm(`Delete channel ${c}?`))return;
+  const ch=CH[c-1];
+  Object.assign(ch,{empty:true,freq:0,mode:'4',tag:'',ctcss_mode:'0',ctcss_idx:'000',offset_dir:'0',offset_hz:0});
+  renderTable();saveLocal();
+}
+
+// ─── Dialog ───────────────────────────────────────────────────
+function showDialog(chNum, forceNew=false){
+  editCh=chNum;
+  const ch=CH[chNum-1];
+  const isEmpty=ch.empty||forceNew;
+  document.getElementById('dlg-title').textContent=`${isEmpty?'New':'Edit'} Channel ${pad3(chNum)}`;
+  document.getElementById('d-ch').value=pad3(chNum);
+  document.getElementById('d-tag').value=isEmpty?'':ch.tag;
+  document.getElementById('d-freq').value=isEmpty?'':(ch.freq/1e6).toFixed(6).replace(/\.?0+$/,'');
+  document.getElementById('d-mode').value=isEmpty?'4':ch.mode;
+  document.getElementById('d-shift').value=isEmpty?'0':ch.offset_dir;
+  document.getElementById('d-ctcss').value=ch.ctcss_idx||'000';
+  document.getElementById('d-ctcss-mode').value=isEmpty?'0':ch.ctcss_mode;
+  document.getElementById('d-offset').value=ch.offset_hz||'';
+  document.getElementById('overlay').classList.add('show');
+  setTimeout(()=>document.getElementById('d-tag').focus(),50);
+}
+function hideDialog(){document.getElementById('overlay').classList.remove('show');editCh=null;}
+function overlayClick(e){if(e.target===document.getElementById('overlay'))hideDialog();}
+
+function saveDialog(){
+  if(editCh===null)return;
+  const freqStr=document.getElementById('d-freq').value.trim();
+  const freqHz=Math.round(parseFloat(freqStr)*1e6);
+  if(isNaN(freqHz)||freqHz<30000||freqHz>470000000){
+    alert('Invalid frequency.\nEnter value in MHz, valid range: 0.03 – 470 MHz');
+    document.getElementById('d-freq').focus();return;
+  }
+  const ch=CH[editCh-1];
+  ch.empty=false;ch.freq=freqHz;
+  ch.mode=document.getElementById('d-mode').value;
+  ch.offset_dir=document.getElementById('d-shift').value;
+  ch.ctcss_idx=document.getElementById('d-ctcss').value;
+  ch.ctcss_mode=document.getElementById('d-ctcss-mode').value;
+  ch.offset_hz=parseInt(document.getElementById('d-offset').value)||0;
+  ch.tag=document.getElementById('d-tag').value.substring(0,12);
+  hideDialog();renderTable();saveLocal();
+}
+
+// ─── CSV ──────────────────────────────────────────────────────
+function exportCSV(){
+  const hdr=['Ch','TAG','Freq_Hz','Freq_MHz','Mode','CTCSS_mode','CTCSS_idx','CTCSS_Hz','Shift_dir','Offset_Hz'];
+  const rows=[hdr];
+  CH.filter(c=>!c.empty).forEach(c=>{
+    const tone=CTCSS.find(t=>t.i===c.ctcss_idx);
+    const shift=c.offset_dir==='0'?'simplex':c.offset_dir==='1'?'plus':'minus';
+    rows.push([pad3(c.num),c.tag,c.freq,(c.freq/1e6).toFixed(6),
+      MODES[c.mode]||c.mode,c.ctcss_mode,c.ctcss_idx,tone?tone.hz:'',shift,c.offset_hz]);
+  });
+  const csv=rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\r\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download=`webrig_memory_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+function importCSV(){
+  const inp=document.createElement('input');
+  inp.type='file';inp.accept='.csv';
+  inp.onchange=async e=>{
+    const txt=await e.target.files[0].text();
+    const lines=txt.trim().split(/\r?\n/).slice(1);
+    let n=0;
+    lines.forEach(line=>{
+      const c=line.split(',').map(v=>v.replace(/^"|"$/g,''));
+      const num=parseInt(c[0]);
+      if(num>=1&&num<=99){
+        const ch=CH[num-1];
+        ch.empty=false;
+        ch.tag=(c[1]||'').substring(0,12);
+        ch.freq=parseInt(c[2])||0;
+        const me=Object.entries(MODES).find(([k,v])=>v===c[4]);
+        ch.mode=me?me[0]:'4';
+        ch.ctcss_mode=c[5]||'0';
+        ch.ctcss_idx=c[6]||'000';
+        ch.offset_dir=c[8]==='plus'?'1':c[8]==='minus'?'2':'0';
+        ch.offset_hz=parseInt(c[9])||0;
+        n++;
+      }
+    });
+    renderTable();saveLocal();
+    setMsg(`Imported ${n} channels from CSV`);
+  };
+  inp.click();
+}
+
+// ─── UI helpers ───────────────────────────────────────────────
+function showBanner(msg){
+  document.getElementById('banner-txt').textContent=msg;
+  document.getElementById('banner').classList.add('show');
+}
+function hideBanner(){document.getElementById('banner').classList.remove('show');}
+
+function showProg(on,lbl=''){
+  document.getElementById('prog-wrap').classList.toggle('show',on);
+  document.getElementById('prog-lbl').textContent=lbl;
+  if(!on)document.getElementById('prog-fill').style.width='0%';
+}
+function setProg(pct,lbl){
+  document.getElementById('prog-fill').style.width=(pct*100).toFixed(1)+'%';
+  document.getElementById('prog-lbl').textContent=lbl;
+}
+function setMsg(msg,err=false){
+  const el=document.getElementById('st-msg');
+  el.textContent=msg;
+  el.className=err?'sbar-err':'sbar-ok';
+}
+function fmtFreq(hz){
+  if(!hz)return'–';
+  const m=hz/1e6;
+  if(m>=1)return m.toFixed(6).replace(/\.?0+$/,'')+' MHz';
+  return (hz/1000).toFixed(3)+' kHz';
+}
+function pad3(n){return String(n).padStart(3,'0');}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function timeNow(){return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+// ─── Keyboard shortcuts ───────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  const dlgOpen=document.getElementById('overlay').classList.contains('show');
+  if(dlgOpen){
+    if(e.key==='Escape')hideDialog();
+    if(e.key==='Enter'&&e.ctrlKey){saveDialog();}
+    return;
+  }
+  if(e.key==='Escape'){hideCtx();return;}
+  if(!selCh)return;
+  if(e.key==='Enter'){_ctxCh=selCh;ctxEdit();}
+  if(e.key==='d'||e.key==='D'){_ctxCh=selCh;ctxDuplicate();}
+  if(e.key==='Delete'){_ctxCh=selCh;ctxDelete();}
+});
+document.addEventListener('click',e=>{
+  if(!document.getElementById('ctx').contains(e.target))hideCtx();
+});
+
+// ─── Init ─────────────────────────────────────────────────────
+(function init(){
+  // Populate CTCSS dropdown
+  const sel=document.getElementById('d-ctcss');
+  CTCSS.forEach(t=>{
+    const o=document.createElement('option');
+    o.value=t.i;o.textContent=`${t.hz} Hz`;sel.appendChild(o);
+  });
+  loadLocal();
+  renderTable();
+  if(!navigator.serial){
+    showBanner('Web Serial API not supported — please use Chrome or Edge (not Firefox or Safari).');
+    document.getElementById('conn-btn').disabled=true;
+  }
+})();
+</script>
+</body>
+</html>
