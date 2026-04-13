@@ -127,6 +127,7 @@ td.empty-row{color:var(--text3);font-style:italic}
       <option value="9600">9600</option>
       <option value="4800">4800</option>
     </select>
+    <button id="auto-btn" onclick="autoDetect()">Auto-detect</button>
     <button id="conn-btn" onclick="toggleConnect()">Connect</button>
   </div>
 </div>
@@ -334,7 +335,92 @@ function saveLocal(){
 }
 
 // ─── Serial ───────────────────────────────────────────────────
-async function toggleConnect(){
+async function autoDetect(){
+  if(!navigator.serial){showBanner('Web Serial API not supported. Use Chrome or Edge.');return;}
+  const btn=document.getElementById('auto-btn');
+  btn.disabled=true;btn.textContent='Scanning...';
+  hideBanner();
+
+  // Get ports already granted permission
+  let ports=[];
+  try{ports=await navigator.serial.getPorts();}catch(e){}
+
+  if(!ports.length){
+    // No known ports – ask user to select manually then scan
+    showBanner('No previously used ports found. Click "Connect" to select a port manually, then try Auto-detect again.');
+    btn.disabled=false;btn.textContent='Auto-detect';
+    return;
+  }
+
+  const baud=parseInt(document.getElementById('baud').value);
+  setMsg(`Scanning ${ports.length} port(s)...`);
+
+  for(const p of ports){
+    let testPort=null,testReader=null,testWriter=null;
+    try{
+      await p.open({baudRate:baud,dataBits:8,stopBits:1,parity:'none'});
+      testPort=p;
+      testReader=p.readable.getReader();
+      testWriter=p.writable.getWriter();
+
+      // Send ID query
+      await testWriter.write(new TextEncoder().encode('ID;'));
+
+      // Wait up to 1.5s for response
+      const resp=await Promise.race([
+        readOne(testReader),
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),1500))
+      ]);
+
+      await testReader.cancel();testReader=null;
+      testWriter.releaseLock();testWriter=null;
+      await p.close();testPort=null;
+
+      if(resp&&resp.startsWith('ID0670')){
+        // Found it! Now connect properly
+        setMsg('FT-991A found — connecting...');
+        port=p;
+        await port.open({baudRate:baud,dataBits:8,stopBits:1,parity:'none'});
+        reader=port.readable.getReader();
+        writer=port.writable.getWriter();
+        readBuf='';
+        updateConnUI(true);
+        readLoop();
+        btn.disabled=false;btn.textContent='Auto-detect';
+        setMsg(`FT-991A detected and connected — ${timeStamp()}`);
+        return;
+      }
+    }catch(e){
+      // Port busy or no response — skip
+    }finally{
+      try{if(testReader)await testReader.cancel();}catch(e){}
+      try{if(testWriter)testWriter.releaseLock();}catch(e){}
+      try{if(testPort&&testPort.readable)await testPort.close();}catch(e){}
+    }
+  }
+
+  // Nothing found
+  btn.disabled=false;btn.textContent='Auto-detect';
+  showBanner(`FT-991A not found on any of the ${ports.length} known port(s). Check cable/baud rate, or click "Connect" to select port manually.`);
+  setMsg('Auto-detect: FT-991A not found',true);
+}
+
+// Read a single semicolon-terminated response
+function readOne(r){
+  return new Promise(async(res,rej)=>{
+    const dec=new TextDecoder();
+    let buf='';
+    try{
+      while(true){
+        const{value,done}=await r.read();
+        if(done)break;
+        buf+=dec.decode(value);
+        const idx=buf.indexOf(';');
+        if(idx!==-1){res(buf.slice(0,idx+1));return;}
+      }
+    }catch(e){rej(e);}
+  });
+}
   port ? doDisconnect() : doConnect();
 }
 async function doConnect(){
@@ -721,9 +807,23 @@ function fmtFreq(hz){
   if(m>=1)return m.toFixed(6).replace(/\.?0+$/,'')+' MHz';
   return (hz/1000).toFixed(3)+' kHz';
 }
+function parseOffset(s){
+  if(!s||!s.trim())return 0;
+  const v=s.trim().replace(',','.');
+  const n=parseFloat(v);
+  if(isNaN(n))return 0;
+  // If value looks like MHz (has decimal point, or value < 100)
+  if(v.includes('.')||n<100){return Math.round(n*1e6);}
+  return Math.round(n);
+}
 function pad3(n){return String(n).padStart(3,'0');}
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function timeNow(){return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
+function timeStamp(){
+  const d=new Date();
+  const date=d.toLocaleDateString([],{year:'numeric',month:'2-digit',day:'2-digit'});
+  const time=d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false});
+  return`${date} ${time}`;
+}
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
 // ─── Keyboard shortcuts ───────────────────────────────────────
@@ -757,6 +857,7 @@ document.addEventListener('click',e=>{
   if(!navigator.serial){
     showBanner('Web Serial API not supported — please use Chrome or Edge (not Firefox or Safari).');
     document.getElementById('conn-btn').disabled=true;
+    document.getElementById('auto-btn').disabled=true;
   }
 })();
 </script>
