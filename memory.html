@@ -6,27 +6,31 @@
 <title>WebRig – Memory Channels</title>
 <style>
 :root{
-  --bg:#ffffff;--bg2:#f8f8f7;--bg3:#f0f0ee;
-  --text:#1a1a18;--text2:#6b6b67;--text3:#aaa;
-  --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.2);
-  --accent:#1a6ef5;--accent-bg:#e8f0fe;--accent-text:#1a4db5;
-  --warn-bg:#fffbeb;--warn-border:rgba(160,100,0,0.2);--warn-text:#92600a;
-  --danger:#dc2626;--danger-bg:#fef2f2;
-  --success:#16a34a;--r-md:8px;--r-lg:12px;
+  --bg:#141412;--bg2:#1c1c1a;--bg3:#242422;--bg4:#2e2e2b;
+  --text:#e8e8e4;--text2:#8a8a84;--text3:#555;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --accent:#4d8ef7;--accent-bg:rgba(77,142,247,0.12);--accent-text:#7aacff;
+  --warn-bg:rgba(251,191,36,0.08);--warn-border:rgba(251,191,36,0.2);--warn-text:#fbbf24;
+  --danger:#f87171;--danger-bg:rgba(248,113,113,0.1);
+  --success:#4ade80;--r-md:8px;--r-lg:12px;
 }
-@media(prefers-color-scheme:dark){:root{
-  --bg:#1c1c1a;--bg2:#242422;--bg3:#2e2e2b;
-  --text:#e4e4e0;--text2:#8a8a84;--text3:#555;
-  --border:rgba(255,255,255,0.09);--border2:rgba(255,255,255,0.16);
-  --accent:#4d8ef7;--accent-bg:#1a2a45;--accent-text:#7aacff;
-  --warn-bg:#2a2210;--warn-border:rgba(200,140,0,0.25);--warn-text:#e8b84a;
-  --danger:#f87171;--danger-bg:#2a1010;--success:#4ade80;
-}}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;background:var(--bg);color:var(--text);display:flex;flex-direction:column;height:100vh;overflow:hidden}
 
-/* Header */
+/* Nav */
+nav{display:flex;align-items:center;padding:11px 18px;border-bottom:0.5px solid var(--border);background:rgba(20,20,18,.92);backdrop-filter:blur(12px);flex-shrink:0}
+.nav-logo{font-size:15px;font-weight:600;letter-spacing:-.4px;color:var(--text);text-decoration:none}
+.nav-logo span{color:var(--accent)}
+.nav-links{display:flex;align-items:center;gap:3px;margin-left:20px}
+.nav-link{padding:4px 10px;border-radius:var(--r-md);font-size:13px;color:var(--text2);text-decoration:none;transition:all .15s}
+.nav-link:hover{color:var(--text);background:var(--bg3)}
+.nav-link.active{color:var(--text);background:var(--bg3)}
+.nav-spacer{flex:1}
+.nav-badge{font-size:11px;padding:2px 8px;border-radius:20px;border:0.5px solid var(--border2);color:var(--text3)}
+
+/* Header conn row */
+.hdr{display:none}
 .hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 18px;border-bottom:0.5px solid var(--border);flex-shrink:0}
 .logo{font-size:15px;font-weight:500}.logo span{color:var(--text2);font-weight:400}
 .conn-row{display:flex;align-items:center;gap:8px}
@@ -115,12 +119,16 @@ td.empty-row{color:var(--text3);font-style:italic}
 </head>
 <body>
 
-<!-- Header -->
-<div class="hdr">
-  <div class="logo">WebRig <span>/ Memory Channels</span></div>
-  <div class="conn-row">
+<nav>
+  <a class="nav-logo" href="index.html">Web<span>Rig</span></a>
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">Home</a>
+    <a class="nav-link active" href="memory.html">Memory Channels</a>
+  </div>
+  <div class="nav-spacer"></div>
+  <div style="display:flex;align-items:center;gap:8px">
     <div class="dot" id="dot"></div>
-    <span class="conn-lbl" id="conn-lbl">Not connected</span>
+    <span class="nav-badge" id="conn-lbl">Not connected</span>
     <select id="baud" title="Baud rate">
       <option value="38400" selected>38400</option>
       <option value="19200">19200</option>
@@ -130,7 +138,7 @@ td.empty-row{color:var(--text3);font-style:italic}
     <button id="auto-btn" onclick="autoDetect()">Auto-detect</button>
     <button id="conn-btn" onclick="toggleConnect()">Connect</button>
   </div>
-</div>
+</nav>
 
 <!-- Warning banner -->
 <div class="banner" id="banner">
