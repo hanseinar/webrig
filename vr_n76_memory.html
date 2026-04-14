@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WebRig – VR-N76 Memory Channels</title>
+<style>
+:root{
+  --bg:#141412;--bg2:#1c1c1a;--bg3:#242422;--bg4:#2e2e2b;
+  --text:#e8e8e4;--text2:#8a8a84;--text3:#4a4a46;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --accent:#4d8ef7;--accent-bg:rgba(77,142,247,0.12);--accent-text:#7aacff;
+  --green:#4ade80;--green-bg:rgba(74,222,128,0.08);
+  --amber:#fbbf24;--amber-bg:rgba(251,191,36,0.08);--amber-border:rgba(251,191,36,0.2);
+  --danger:#f87171;--danger-bg:rgba(248,113,113,0.1);
+  --r-md:8px;--r-lg:12px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px}
+body{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+
+nav{display:flex;align-items:center;padding:10px 16px;border-bottom:0.5px solid var(--border);background:rgba(20,20,18,.92);backdrop-filter:blur(12px);flex-shrink:0;gap:6px}
+.nav-logo{font-size:15px;font-weight:700;letter-spacing:-.4px;color:var(--text);text-decoration:none}
+.nav-logo em{color:var(--accent);font-style:normal}
+.nav-sep{width:0.5px;height:14px;background:var(--border2);margin:0 4px}
+.nav-link{padding:4px 9px;border-radius:var(--r-md);font-size:12px;color:var(--text2);text-decoration:none;transition:all .12s}
+.nav-link:hover{color:var(--text);background:var(--bg3)}
+.nav-link.active{color:var(--text);background:var(--bg3)}
+.nav-sp{flex:1}
+.ndot{width:7px;height:7px;border-radius:50%;background:var(--text3);transition:background .3s;flex-shrink:0}
+.ndot.on{background:var(--green)}
+.nbadge{font-size:11px;padding:2px 8px;border-radius:20px;border:0.5px solid var(--border2);color:var(--text3)}
+select.nsel{font-family:inherit;font-size:12px;padding:3px 6px;border-radius:var(--r-md);border:0.5px solid var(--border2);background:var(--bg2);color:var(--text2);cursor:pointer}
+
+button{font-family:inherit;font-size:12px;padding:5px 11px;border-radius:var(--r-md);border:0.5px solid var(--border2);background:transparent;color:var(--text);cursor:pointer;transition:background .1s}
+button:hover:not(:disabled){background:var(--bg3)}
+button:disabled{opacity:.35;cursor:not-allowed}
+button.primary{background:var(--accent);color:#fff;border-color:transparent}
+button.primary:hover:not(:disabled){opacity:.88}
+button.danger{color:var(--danger);border-color:rgba(248,113,113,.3)}
+button.danger:hover:not(:disabled){background:var(--danger-bg)}
+
+.banner{display:none;align-items:center;gap:10px;padding:7px 16px;border-bottom:0.5px solid var(--amber-border);background:var(--amber-bg);font-size:12px;color:var(--amber);flex-shrink:0}
+.banner.show{display:flex}
+.banner button{font-size:11px;padding:3px 9px;margin-left:auto;color:var(--amber);border-color:var(--amber-border)}
+
+.toolbar{display:flex;align-items:center;gap:6px;padding:8px 16px;border-bottom:0.5px solid var(--border);background:var(--bg2);flex-shrink:0;flex-wrap:wrap}
+.tsep{width:0.5px;height:16px;background:var(--border2);margin:0 2px}
+.tsp{flex:1}
+#search{padding:5px 9px;border-radius:var(--r-md);border:0.5px solid var(--border2);background:var(--bg);color:var(--text);font-size:12px;width:180px;font-family:inherit}
+#search:focus{outline:none;border-color:var(--accent)}
+
+.prog-wrap{display:none;padding:5px 16px;background:var(--bg2);border-bottom:0.5px solid var(--border);flex-shrink:0}
+.prog-wrap.show{display:block}
+.prog-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:var(--accent);width:0%;transition:width .15s}
+.prog-lbl{font-size:11px;color:var(--text2);margin-top:3px}
+
+.tbl-wrap{flex:1;overflow:auto}
+table{width:100%;border-collapse:collapse}
+thead th{position:sticky;top:0;z-index:2;background:var(--bg2);padding:6px 12px;text-align:left;font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;border-bottom:0.5px solid var(--border);white-space:nowrap}
+tbody tr{border-bottom:0.5px solid var(--border);cursor:default;user-select:none}
+tbody tr:hover{background:var(--bg2)}
+tbody tr.sel{background:var(--accent-bg)}
+td{padding:6px 12px;font-size:12px;white-space:nowrap}
+td.ch{color:var(--text2);font-variant-numeric:tabular-nums;width:44px}
+td.freq{font-variant-numeric:tabular-nums;font-weight:500}
+td.empty{color:var(--text3);font-style:italic}
+.pill{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;background:var(--bg3);border:0.5px solid var(--border)}
+.pill-minus{background:var(--accent-bg);color:var(--accent-text);border:none}
+.pill-plus{background:var(--green-bg);color:var(--green);border:none}
+
+.ctx{position:fixed;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--r-lg);min-width:200px;padding:4px 0;z-index:500;display:none}
+.ctx.show{display:block}
+.ci{display:flex;align-items:center;gap:9px;padding:7px 13px;font-size:12px;cursor:pointer;color:var(--text)}
+.ci:hover{background:var(--bg3)}
+.ci.danger{color:var(--danger)}
+.ci svg{opacity:.4;flex-shrink:0}
+.ck{margin-left:auto;font-size:10px;color:var(--text3)}
+.csep{height:0.5px;background:var(--border);margin:4px 0}
+
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:400;display:none;align-items:center;justify-content:center}
+.overlay.show{display:flex}
+.dlg{background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--r-lg);width:440px;max-width:96vw;overflow:hidden}
+.dlg-hdr{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:0.5px solid var(--border)}
+.dlg-title{font-size:14px;font-weight:500}
+.dlg-body{padding:16px;display:grid;gap:11px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;color:var(--text2);font-weight:500}
+.field input,.field select{padding:6px 9px;border-radius:var(--r-md);border:0.5px solid var(--border2);background:var(--bg);color:var(--text);font-size:12px;font-family:inherit}
+.field input:focus,.field select:focus{outline:none;border-color:var(--accent)}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.frow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.hint{font-size:10px;color:var(--text3);margin-top:2px}
+.dlg-foot{display:flex;justify-content:flex-end;gap:7px;padding:11px 16px;border-top:0.5px solid var(--border)}
+
+.sbar{display:flex;align-items:center;gap:12px;padding:6px 16px;border-top:0.5px solid var(--border);background:var(--bg2);font-size:11px;color:var(--text2);flex-shrink:0}
+.sbar-sp{flex:1}
+.sbar-ok{color:var(--green)}
+.sbar-err{color:var(--danger)}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="index.html">Web<em>Rig</em></a>
+  <div class="nav-sep"></div>
+  <a class="nav-link" href="index.html">Home</a>
+  <a class="nav-link" href="ft991a_memory.html">FT-991A Memory</a>
+  <a class="nav-link active" href="vr_n76_memory.html">VR-N76 Memory</a>
+  <div class="nav-sp"></div>
+  <div class="ndot" id="ndot"></div>
+  <span class="nbadge" id="nlbl">Not connected</span>
+  <button id="auto-btn" onclick="autoDetect()">Auto-detect</button>
+  <button id="conn-btn" onclick="toggleConnect()">Connect</button>
+</nav>
+
+<div class="banner" id="banner">
+  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 1.5l6.5 12H1.5z" stroke-linejoin="round"/><line x1="8" y1="6" x2="8" y2="10"/><circle cx="8" cy="12" r=".6" fill="currentColor"/></svg>
+  <span id="banner-txt"></span>
+  <button onclick="hideBanner()">Dismiss</button>
+</div>
+
+<div class="toolbar">
+  <button id="read-btn" onclick="readAllChannels()" disabled>Read from radio</button>
+  <button id="write-btn" onclick="writeAllChannels()" disabled>Write all to radio</button>
+  <div class="tsep"></div>
+  <button onclick="importCSV()">Import CSV</button>
+  <button onclick="exportCSV()">Export CSV</button>
+  <div class="tsp"></div>
+  <input id="search" type="text" placeholder="Search channel, freq, name..." oninput="renderTable()">
+</div>
+
+<div class="prog-wrap" id="prog-wrap">
+  <div class="prog-bar"><div class="prog-fill" id="prog-fill"></div></div>
+  <div class="prog-lbl" id="prog-lbl">Working...</div>
+</div>
+
+<div class="tbl-wrap">
+  <table>
+    <thead>
+      <tr><th>Ch</th><th>Name</th><th>RX Freq</th><th>TX Freq</th><th>CTCSS TX</th><th>CTCSS RX</th><th>Shift</th></tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<div class="ctx" id="ctx">
+  <div class="ci" id="ci-new" onclick="ctxNew()">
+    <svg width="13" height="13" viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.5" fill="none"><line x1="8" y1="2" x2="8" y2="14"/><line x1="2" y1="8" x2="14" y2="8"/></svg>
+    New channel here
+  </div>
+  <div class="csep"></div>
+  <div class="ci" onclick="ctxEdit()">
+    <svg width="13" height="13" viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.4" fill="none"><path d="M11 2l3 3-8 8H3v-3l8-8z"/></svg>
+    Edit <span class="ck">Enter</span>
+  </div>
+  <div class="ci" id="ci-dup" onclick="ctxDuplicate()">
+    <svg width="13" height="13" viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.4" fill="none"><rect x="5" y="5" width="8" height="8" rx="1.5"/><path d="M3 11V3h8"/></svg>
+    Duplicate to next free <span class="ck">D</span>
+  </div>
+  <div class="csep"></div>
+  <div class="ci" id="ci-send" onclick="ctxSend()">
+    <svg width="13" height="13" viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.4" fill="none"><path d="M2 8h12M10 4l4 4-4 4"/></svg>
+    Send to radio (this channel)
+  </div>
+  <div class="csep"></div>
+  <div class="ci danger" onclick="ctxDelete()">
+    <svg width="13" height="13" viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.4" fill="none"><path d="M3 4.5h10M6 4.5V3h4v1.5M5.5 4.5l.5 8h4l.5-8"/></svg>
+    Delete <span class="ck">Del</span>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="overlayClick(event)">
+  <div class="dlg">
+    <div class="dlg-hdr">
+      <span class="dlg-title" id="dlg-title">Edit Channel</span>
+      <button onclick="hideDialog()">✕</button>
+    </div>
+    <div class="dlg-body">
+      <div class="frow">
+        <div class="field">
+          <label>Channel</label>
+          <input type="text" id="d-ch" readonly style="color:var(--text2)">
+        </div>
+        <div class="field">
+          <label>Name</label>
+          <input type="text" id="d-name" maxlength="10" placeholder="e.g. LA5L rep">
+          <span class="hint">Max 10 characters</span>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="field">
+          <label>RX Frequency (MHz)</label>
+          <input type="text" id="d-rx" placeholder="e.g. 145.725">
+        </div>
+        <div class="field">
+          <label>TX Frequency (MHz)</label>
+          <input type="text" id="d-tx" placeholder="e.g. 145.125">
+          <span class="hint">Leave blank to auto-calculate from shift</span>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="field">
+          <label>Shift</label>
+          <select id="d-shift">
+            <option value="0">Simplex (RX = TX)</option>
+            <option value="-600000">– 600 kHz (2m repeater)</option>
+            <option value="-4500000">– 4.5 MHz (70cm repeater)</option>
+            <option value="-7600000">– 7.6 MHz (70cm alt)</option>
+            <option value="custom">Custom TX freq</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Tone mode</label>
+          <select id="d-tmode">
+            <option value="0">Off</option>
+            <option value="1">CTCSS TX+RX</option>
+            <option value="2">CTCSS TX only</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="field">
+          <label>CTCSS TX tone</label>
+          <select id="d-ctcss-tx"></select>
+        </div>
+        <div class="field">
+          <label>CTCSS RX tone</label>
+          <select id="d-ctcss-rx"></select>
+        </div>
+      </div>
+    </div>
+    <div class="dlg-foot">
+      <button onclick="hideDialog()">Cancel</button>
+      <button class="primary" onclick="saveDialog()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="sbar">
+  <span id="st-total">32 channels</span>
+  <span>·</span>
+  <span id="st-used">0 programmed</span>
+  <div class="sbar-sp"></div>
+  <span id="st-msg"></span>
+</div>
+
+<script>
+// ── CTCSS tones (Hz × 100 stored as uint16 big-endian) ────────
+const CTCSS_TONES=[
+  {hz:67.0,raw:6700},{hz:69.3,raw:6930},{hz:71.9,raw:7190},{hz:74.4,raw:7440},
+  {hz:77.0,raw:7700},{hz:79.7,raw:7970},{hz:82.5,raw:8250},{hz:85.4,raw:8540},
+  {hz:88.5,raw:8850},{hz:91.5,raw:9150},{hz:94.8,raw:9480},{hz:97.4,raw:9740},
+  {hz:100.0,raw:10000},{hz:103.5,raw:10350},{hz:107.2,raw:10720},{hz:110.9,raw:11090},
+  {hz:114.8,raw:11480},{hz:118.8,raw:11880},{hz:123.0,raw:12300},{hz:127.3,raw:12730},
+  {hz:131.8,raw:13180},{hz:136.5,raw:13650},{hz:141.3,raw:14130},{hz:146.2,raw:14620},
+  {hz:151.4,raw:15140},{hz:156.7,raw:15670},{hz:159.8,raw:15980},{hz:162.2,raw:16220},
+  {hz:165.5,raw:16550},{hz:167.9,raw:16790},{hz:171.3,raw:17130},{hz:173.8,raw:17380},
+  {hz:177.3,raw:17730},{hz:179.9,raw:17990},{hz:183.5,raw:18350},{hz:186.2,raw:18620},
+  {hz:189.9,raw:18990},{hz:192.8,raw:19280},{hz:196.6,raw:19660},{hz:199.5,raw:19950},
+  {hz:203.5,raw:20350},{hz:206.5,raw:20650},{hz:210.7,raw:21070},{hz:218.1,raw:21810},
+  {hz:225.7,raw:22570},{hz:229.1,raw:22910},{hz:233.6,raw:23360},{hz:241.8,raw:24180},
+  {hz:250.3,raw:25030},{hz:254.1,raw:25410}
+];
+
+// ── State ─────────────────────────────────────────────────────
+let port=null,reader=null,writer=null,nmeaBuf='',binBuf=[];
+let pendCb=null;
+let selCh=null,editCh=null,ctxCh=null;
+
+// VR-N76 group 1 has 32 channels
+const CH=Array.from({length:32},(_,i)=>({
+  num:i+1,empty:true,rxHz:0,txHz:0,
+  ctcssTxRaw:0,ctcssRxRaw:0,toneMode:0,name:''
+}));
+
+// ── Packet protocol ───────────────────────────────────────────
+// Packet structure (confirmed from live capture):
+// [0-1]  FF 01  magic
+// [2-3]  00 1A  payload length = 26
+// [4-5]  00 02  fixed
+// [6]    80=response / 00=command
+// [7]    0D     channel command
+// [8]    ch_idx 0-based
+// [9]    00     pad
+// [10-13] RX freq Hz  uint32 big-endian
+// [14-17] TX freq Hz  uint32 big-endian
+// [18-19] CTCSS TX    uint16 big-endian (Hz × 100)
+// [20-21] CTCSS RX    uint16 big-endian (Hz × 100)
+// [22]   flags1 (94=70cm simplex, D4=repeater, C4=other)
+// [23]   flags2 (00 or 04)
+// [24-33] name ASCII null-padded 10 bytes
+
+function buildReadCmd(chIdx){
+  return new Uint8Array([0xFF,0x01,0x00,0x01,0x00,0x02,0x00,0x0D,chIdx]);
+}
+
+function buildWriteCmd(ch){
+  const pkt=new Uint8Array(34);
+  pkt[0]=0xFF;pkt[1]=0x01;
+  pkt[2]=0x00;pkt[3]=0x1A; // payload len=26
+  pkt[4]=0x00;pkt[5]=0x02;
+  pkt[6]=0x00; // command (not response)
+  pkt[7]=0x0D;
+  pkt[8]=ch.num-1; // 0-based index
+  pkt[9]=0x00;
+  // RX freq big-endian
+  pkt[10]=(ch.rxHz>>>24)&0xFF;
+  pkt[11]=(ch.rxHz>>>16)&0xFF;
+  pkt[12]=(ch.rxHz>>>8)&0xFF;
+  pkt[13]=ch.rxHz&0xFF;
+  // TX freq big-endian
+  pkt[14]=(ch.txHz>>>24)&0xFF;
+  pkt[15]=(ch.txHz>>>16)&0xFF;
+  pkt[16]=(ch.txHz>>>8)&0xFF;
+  pkt[17]=ch.txHz&0xFF;
+  // CTCSS TX
+  pkt[18]=(ch.ctcssTxRaw>>>8)&0xFF;
+  pkt[19]=ch.ctcssTxRaw&0xFF;
+  // CTCSS RX
+  pkt[20]=(ch.ctcssRxRaw>>>8)&0xFF;
+  pkt[21]=ch.ctcssRxRaw&0xFF;
+  // flags - derive from frequency
+  pkt[22]=ch.rxHz>400000000?0x94:0xD4;
+  pkt[23]=0x00;
+  // name (10 bytes, null padded)
+  const nameBytes=new TextEncoder().encode((ch.name||'').substring(0,10));
+  for(let i=0;i<10;i++)pkt[24+i]=i<nameBytes.length?nameBytes[i]:0;
+  return pkt;
+}
+
+function parseChannelPacket(pkt){
+  // pkt is the full 34-byte packet
+  if(pkt.length<34)return null;
+  const chIdx=pkt[8];
+  const rxHz=((pkt[10]<<24)|(pkt[11]<<16)|(pkt[12]<<8)|pkt[13])>>>0;
+  const txHz=((pkt[14]<<24)|(pkt[15]<<16)|(pkt[16]<<8)|pkt[17])>>>0;
+  const ctcssTx=((pkt[18]<<8)|pkt[19]);
+  const ctcssRx=((pkt[20]<<8)|pkt[21]);
+  // Name: bytes 24-33, stop at null
+  let name='';
+  for(let i=24;i<34;i++){
+    if(pkt[i]===0)break;
+    if(pkt[i]>=32&&pkt[i]<=126)name+=String.fromCharCode(pkt[i]);
+  }
+  return{chIdx,rxHz,txHz,ctcssTx,ctcssRx,name:name.trim()};
+}
+
+// ── Serial ────────────────────────────────────────────────────
+async function toggleConnect(){port?doDisconnect():doConnect();}
+
+async function doConnect(){
+  if(!navigator.serial){showBanner('Web Serial not supported — use Chrome or Edge.');return;}
+  try{
+    port=await navigator.serial.requestPort();
+    await port.open({baudRate:9600});
+    reader=port.readable.getReader();
+    writer=port.writable.getWriter();
+    nmeaBuf='';binBuf=[];
+    updateConnUI(true);
+    readLoop();
+  }catch(e){
+    port=null;
+    if(e.name==='NotFoundError')return;
+    showBanner('Connection failed: '+(e.message||e));
+  }
+}
+
+async function doDisconnect(){
+  try{if(reader)await reader.cancel();}catch(e){}
+  try{if(writer)writer.releaseLock();}catch(e){}
+  try{if(port)await port.close();}catch(e){}
+  port=null;reader=null;writer=null;
+  updateConnUI(false);
+}
+
+async function autoDetect(){
+  if(!navigator.serial){showBanner('Web Serial not supported.');return;}
+  const btn=document.getElementById('auto-btn');
+  btn.disabled=true;btn.textContent='Scanning...';
+  hideBanner();
+  let ports=[];
+  try{ports=await navigator.serial.getPorts();}catch(e){}
+  if(!ports.length){
+    showBanner('No known ports. Click "Connect" to select manually, then try Auto-detect again.');
+    btn.disabled=false;btn.textContent='Auto-detect';return;
+  }
+  setMsg('Scanning '+ports.length+' port(s)...');
+  for(const p of ports){
+    let tr=null,tw=null;
+    try{
+      await p.open({baudRate:9600});
+      tr=p.readable.getReader();tw=p.writable.getWriter();
+      await tw.write(new Uint8Array([0xFF,0x01,0x00,0x01,0x00,0x02,0x00,0x01,0x00]));
+      // Wait for FF 01 response
+      const resp=await Promise.race([
+        readOneBinary(tr),
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),2000))
+      ]);
+      await tr.cancel();tr=null;tw.releaseLock();tw=null;await p.close();
+      if(resp&&resp[0]===0xFF&&resp[1]===0x01&&resp[6]===0x80){
+        port=p;
+        await port.open({baudRate:9600});
+        reader=port.readable.getReader();writer=port.writable.getWriter();
+        nmeaBuf='';binBuf=[];updateConnUI(true);readLoop();
+        btn.disabled=false;btn.textContent='Auto-detect';
+        setMsg('VR-N76 detected — '+timeStamp());return;
+      }
+    }catch(e){
+    }finally{
+      try{if(tr)await tr.cancel();}catch(e){}
+      try{if(tw)tw.releaseLock();}catch(e){}
+      try{if(p.readable||p.writable)await p.close();}catch(e){}
+    }
+  }
+  btn.disabled=false;btn.textContent='Auto-detect';
+  showBanner('VR-N76 not found on '+ports.length+' port(s). Try connecting manually.');
+  setMsg('Auto-detect: not found',true);
+}
+
+async function readOneBinary(r){
+  const dec=new TextDecoder();
+  let buf=[];
+  while(true){
+    const{value,done}=await r.read();
+    if(done)break;
+    for(const b of value){
+      if(b===0x24)continue; // skip NMEA
+      buf.push(b);
+      if(buf.length>=4){
+        const plen=(buf[2]<<8)|buf[3];
+        if(buf.length>=4+plen)return new Uint8Array(buf);
+      }
+    }
+  }
+}
+
+async function readLoop(){
+  try{
+    while(reader){
+      const{value,done}=await reader.read();
+      if(done)break;
+      for(const b of value){
+        if(b===0x24&&binBuf.length===0){nmeaBuf='$';}
+        else if(nmeaBuf.length>0){
+          nmeaBuf+=String.fromCharCode(b);
+          if(b===0x0A){nmeaBuf='';}
+        }else{
+          binBuf.push(b);
+          if(binBuf.length>=4){
+            const plen=(binBuf[2]<<8)|binBuf[3];
+            const tot=4+plen;
+            if(binBuf.length>=tot){
+              const pkt=new Uint8Array(binBuf.splice(0,tot));
+              if(pendCb)pendCb(pkt);
+              else handleUnsolicited(pkt);
+            }
+          }
+        }
+      }
+    }
+  }catch(e){}
+}
+
+function handleUnsolicited(pkt){
+  // Radio may push channel updates — handle silently
+}
+
+function waitResp(ms=2000){
+  return new Promise((res,rej)=>{
+    const t=setTimeout(()=>{pendCb=null;rej(new Error('timeout'));},ms);
+    pendCb=pkt=>{clearTimeout(t);pendCb=null;res(pkt);};
+  });
+}
+
+async function sendCmd(bytes){
+  if(!writer)throw new Error('Not connected');
+  await writer.write(new Uint8Array(bytes));
+}
+
+// ── Radio operations ──────────────────────────────────────────
+async function readAllChannels(){
+  if(!port){showBanner('Not connected.');return;}
+  showProg(true,'Reading channels from radio...');
+  let ok=0;
+  for(let i=0;i<32;i++){
+    try{
+      await sendCmd(buildReadCmd(i));
+      const pkt=await waitResp(2000);
+      const parsed=parseChannelPacket(pkt);
+      if(parsed&&parsed.rxHz>0){
+        const ch=CH[i];
+        ch.empty=false;ch.rxHz=parsed.rxHz;ch.txHz=parsed.txHz;
+        ch.ctcssTxRaw=parsed.ctcssTx;ch.ctcssRxRaw=parsed.ctcssRx;
+        ch.name=parsed.name;
+        ch.toneMode=parsed.ctcssTx>0?1:0;
+        ok++;
+      }else{
+        CH[i].empty=true;CH[i].rxHz=0;CH[i].name='';
+      }
+    }catch(e){CH[i].empty=true;}
+    setProg((i+1)/32,'Reading channel '+(i+1)+' / 32');
+    await sleep(300);
+  }
+  showProg(false);
+  renderTable();
+  setMsg('Read complete — '+ok+' channels — '+timeStamp());
+}
+
+async function writeAllChannels(){
+  const toWrite=CH.filter(c=>!c.empty);
+  if(!toWrite.length){alert('No channels to write.');return;}
+  if(!confirm('Write '+toWrite.length+' channels to radio?'))return;
+  showProg(true,'Writing to radio...');
+  for(let i=0;i<toWrite.length;i++){
+    try{await sendCmd(Array.from(buildWriteCmd(toWrite[i])));await sleep(400);}catch(e){}
+    setProg((i+1)/toWrite.length,'Writing channel '+toWrite[i].num+'...');
+  }
+  showProg(false);
+  setMsg('Written '+toWrite.length+' channels — '+timeStamp());
+}
+
+async function writeSingle(chNum){
+  if(!port){alert('Not connected.');return;}
+  const ch=CH[chNum-1];
+  if(ch.empty){alert('Channel is empty.');return;}
+  try{
+    await sendCmd(Array.from(buildWriteCmd(ch)));
+    await sleep(300);
+    setMsg('Ch '+chNum+' sent — '+timeStamp());
+  }catch(e){setMsg('Error: '+e.message,true);}
+}
+
+// ── Render ────────────────────────────────────────────────────
+function renderTable(){
+  const q=document.getElementById('search').value.toLowerCase();
+  const tbody=document.getElementById('tbody');
+  tbody.innerHTML='';
+  let used=0;
+  CH.forEach(ch=>{
+    if(q){
+      const hay=(pad2(ch.num)+' '+ch.name+' '+fmtFreq(ch.rxHz)).toLowerCase();
+      if(!hay.includes(q))return;
+    }
+    if(!ch.empty)used++;
+    const tr=document.createElement('tr');
+    if(selCh===ch.num)tr.classList.add('sel');
+    tr.dataset.ch=ch.num;
+    tr.addEventListener('contextmenu',e=>showCtx(e,ch.num));
+    tr.addEventListener('dblclick',()=>showDialog(ch.num));
+    tr.addEventListener('click',()=>{selCh=ch.num;renderTable();});
+    if(ch.empty){
+      tr.innerHTML='<td class="ch">'+pad2(ch.num)+'</td><td colspan="6" class="empty">— empty —</td>';
+    }else{
+      const txTone=ch.ctcssTxRaw>0?fmtTone(ch.ctcssTxRaw):'–';
+      const rxTone=ch.ctcssRxRaw>0?fmtTone(ch.ctcssRxRaw):'–';
+      const shiftHz=ch.txHz-ch.rxHz;
+      const shiftStr=shiftHz===0?'simplex':shiftHz>0?'+'+fmtOffset(shiftHz):fmtOffset(shiftHz);
+      const shiftCls=shiftHz<0?'pill-minus':shiftHz>0?'pill-plus':'pill';
+      tr.innerHTML='<td class="ch">'+pad2(ch.num)+'</td>'
+        +'<td>'+esc(ch.name||'–')+'</td>'
+        +'<td class="freq">'+fmtFreq(ch.rxHz)+'</td>'
+        +'<td class="freq">'+fmtFreq(ch.txHz)+'</td>'
+        +'<td>'+txTone+'</td>'
+        +'<td>'+rxTone+'</td>'
+        +'<td><span class="pill '+shiftCls+'">'+shiftStr+'</span></td>';
+    }
+    tbody.appendChild(tr);
+  });
+  document.getElementById('st-used').textContent=used+' programmed';
+}
+
+// ── Context menu ──────────────────────────────────────────────
+function showCtx(e,chNum){
+  e.preventDefault();
+  ctxCh=chNum;selCh=chNum;
+  const ch=CH[chNum-1];
+  document.getElementById('ci-dup').classList.toggle('disabled',ch.empty);
+  document.getElementById('ci-send').classList.toggle('disabled',ch.empty||!port);
+  const menu=document.getElementById('ctx');
+  menu.style.left=Math.min(e.clientX,window.innerWidth-220)+'px';
+  menu.style.top=Math.min(e.clientY,window.innerHeight-200)+'px';
+  menu.classList.add('show');
+  renderTable();
+}
+function hideCtx(){document.getElementById('ctx').classList.remove('show');}
+function ctxNew(){const c=ctxCh;hideCtx();if(c)showDialog(c,true);}
+function ctxEdit(){const c=ctxCh;hideCtx();if(c)showDialog(c);}
+function ctxDuplicate(){
+  const c=ctxCh;hideCtx();if(!c)return;
+  const src=CH[c-1];if(src.empty)return;
+  const free=CH.find(x=>x.empty);
+  if(!free){alert('No free channels.');return;}
+  const n=free.num;
+  Object.assign(free,{...src,num:n,empty:false});
+  renderTable();showDialog(n);
+}
+function ctxSend(){const c=ctxCh;hideCtx();if(c)writeSingle(c);}
+function ctxDelete(){
+  const c=ctxCh;hideCtx();if(!c)return;
+  if(!confirm('Delete channel '+c+'?'))return;
+  Object.assign(CH[c-1],{empty:true,rxHz:0,txHz:0,name:'',ctcssTxRaw:0,ctcssRxRaw:0,toneMode:0});
+  renderTable();
+}
+
+// ── Dialog ────────────────────────────────────────────────────
+function showDialog(chNum,forceNew=false){
+  editCh=chNum;
+  const ch=CH[chNum-1];
+  const isNew=ch.empty||forceNew;
+  document.getElementById('dlg-title').textContent=(isNew?'New':'Edit')+' Channel '+pad2(chNum);
+  document.getElementById('d-ch').value=pad2(chNum);
+  document.getElementById('d-name').value=isNew?'':ch.name;
+  document.getElementById('d-rx').value=isNew?'':(ch.rxHz/1e6).toFixed(6).replace(/\.?0+$/,'');
+  // TX freq
+  const shift=ch.txHz-ch.rxHz;
+  if(isNew){
+    document.getElementById('d-shift').value='0';
+    document.getElementById('d-tx').value='';
+  }else if(shift===-600000){
+    document.getElementById('d-shift').value='-600000';
+    document.getElementById('d-tx').value='';
+  }else if(shift===-4500000){
+    document.getElementById('d-shift').value='-4500000';
+    document.getElementById('d-tx').value='';
+  }else if(shift===-7600000){
+    document.getElementById('d-shift').value='-7600000';
+    document.getElementById('d-tx').value='';
+  }else if(shift===0){
+    document.getElementById('d-shift').value='0';
+    document.getElementById('d-tx').value='';
+  }else{
+    document.getElementById('d-shift').value='custom';
+    document.getElementById('d-tx').value=(ch.txHz/1e6).toFixed(6).replace(/\.?0+$/,'');
+  }
+  document.getElementById('d-tmode').value=ch.toneMode||0;
+  document.getElementById('d-ctcss-tx').value=ch.ctcssTxRaw||0;
+  document.getElementById('d-ctcss-rx').value=ch.ctcssRxRaw||0;
+  document.getElementById('overlay').classList.add('show');
+  setTimeout(()=>document.getElementById('d-name').focus(),50);
+}
+function hideDialog(){document.getElementById('overlay').classList.remove('show');editCh=null;}
+function overlayClick(e){if(e.target===document.getElementById('overlay'))hideDialog();}
+
+function saveDialog(){
+  if(editCh===null)return;
+  const rxStr=document.getElementById('d-rx').value.trim();
+  const rxHz=Math.round(parseFloat(rxStr.replace(',','.'))*1e6);
+  if(isNaN(rxHz)||rxHz<30000||rxHz>520000000){
+    alert('Invalid RX frequency (0.03 – 520 MHz)');
+    document.getElementById('d-rx').focus();return;
+  }
+  const shiftVal=document.getElementById('d-shift').value;
+  let txHz;
+  if(shiftVal==='custom'){
+    const txStr=document.getElementById('d-tx').value.trim();
+    txHz=Math.round(parseFloat(txStr.replace(',','.'))*1e6);
+    if(isNaN(txHz)||txHz<30000){alert('Invalid TX frequency');return;}
+  }else{
+    txHz=rxHz+parseInt(shiftVal);
+  }
+  const ch=CH[editCh-1];
+  ch.empty=false;
+  ch.rxHz=rxHz;ch.txHz=txHz;
+  ch.name=document.getElementById('d-name').value.substring(0,10);
+  ch.toneMode=parseInt(document.getElementById('d-tmode').value);
+  ch.ctcssTxRaw=parseInt(document.getElementById('d-ctcss-tx').value)||0;
+  ch.ctcssRxRaw=parseInt(document.getElementById('d-ctcss-rx').value)||0;
+  hideDialog();renderTable();
+}
+
+// ── CSV ───────────────────────────────────────────────────────
+function exportCSV(){
+  const hdr=['Ch','Name','RX_Hz','RX_MHz','TX_Hz','TX_MHz','CTCSS_TX_Hz','CTCSS_RX_Hz','Shift_Hz'];
+  const rows=[hdr];
+  CH.filter(c=>!c.empty).forEach(c=>{
+    rows.push([c.num,c.name,c.rxHz,(c.rxHz/1e6).toFixed(6),
+      c.txHz,(c.txHz/1e6).toFixed(6),
+      c.ctcssTxRaw?(c.ctcssTxRaw/100).toFixed(1):'',
+      c.ctcssRxRaw?(c.ctcssRxRaw/100).toFixed(1):'',
+      c.txHz-c.rxHz]);
+  });
+  const csv=rows.map(r=>r.map(v=>'"'+v+'"').join(',')).join('\r\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='vr_n76_channels_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+function importCSV(){
+  const inp=document.createElement('input');
+  inp.type='file';inp.accept='.csv';
+  inp.onchange=async e=>{
+    const txt=await e.target.files[0].text();
+    const lines=txt.trim().split(/\r?\n/).slice(1);
+    let n=0;
+    lines.forEach(line=>{
+      const c=line.split(',').map(v=>v.replace(/^"|"$/g,''));
+      const num=parseInt(c[0]);
+      if(num>=1&&num<=32){
+        const ch=CH[num-1];
+        ch.empty=false;
+        ch.name=(c[1]||'').substring(0,10);
+        ch.rxHz=parseInt(c[2])||0;
+        ch.txHz=parseInt(c[4])||0;
+        ch.ctcssTxRaw=c[6]?Math.round(parseFloat(c[6])*100):0;
+        ch.ctcssRxRaw=c[7]?Math.round(parseFloat(c[7])*100):0;
+        n++;
+      }
+    });
+    renderTable();
+    setMsg('Imported '+n+' channels from CSV');
+  };
+  inp.click();
+}
+
+// ── UI helpers ────────────────────────────────────────────────
+function updateConnUI(on){
+  document.getElementById('ndot').classList.toggle('on',on);
+  const btn=document.getElementById('conn-btn');
+  btn.textContent=on?'Disconnect':'Connect';
+  btn.className=on?'danger':'';
+  document.getElementById('nlbl').textContent=on?'VR-N76':'Not connected';
+  document.getElementById('read-btn').disabled=!on;
+  document.getElementById('write-btn').disabled=!on;
+}
+function showBanner(msg){document.getElementById('banner-txt').textContent=msg;document.getElementById('banner').classList.add('show');}
+function hideBanner(){document.getElementById('banner').classList.remove('show');}
+function showProg(on,lbl=''){
+  document.getElementById('prog-wrap').classList.toggle('show',on);
+  document.getElementById('prog-lbl').textContent=lbl;
+  if(!on)document.getElementById('prog-fill').style.width='0%';
+}
+function setProg(pct,lbl){
+  document.getElementById('prog-fill').style.width=(pct*100).toFixed(1)+'%';
+  document.getElementById('prog-lbl').textContent=lbl;
+}
+function setMsg(msg,err=false){const e=document.getElementById('st-msg');e.textContent=msg;e.className=err?'sbar-err':'sbar-ok';}
+function fmtFreq(hz){if(!hz)return'–';return(hz/1e6).toFixed(4).replace(/\.?0+$/,'')+' MHz';}
+function fmtTone(raw){return(raw/100).toFixed(1)+' Hz';}
+function fmtOffset(hz){const k=Math.abs(hz)/1000;return(hz<0?'–':'+')+(k>=1000?(k/1000).toFixed(1)+' MHz':k.toFixed(0)+' kHz');}
+function pad2(n){return String(n).padStart(2,'0');}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function timeStamp(){const d=new Date();return d.toLocaleDateString([],{year:'numeric',month:'2-digit',day:'2-digit'})+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false});}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+// ── Keyboard ──────────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  const dlg=document.getElementById('overlay').classList.contains('show');
+  if(dlg){if(e.key==='Escape')hideDialog();return;}
+  if(e.key==='Escape')hideCtx();
+  if(!selCh)return;
+  if(e.key==='Enter'){ctxCh=selCh;ctxEdit();}
+  if(e.key==='d'||e.key==='D'){ctxCh=selCh;ctxDuplicate();}
+  if(e.key==='Delete'){ctxCh=selCh;ctxDelete();}
+});
+document.addEventListener('click',e=>{
+  if(!document.getElementById('ctx').contains(e.target))hideCtx();
+});
+
+// ── Init ──────────────────────────────────────────────────────
+(function init(){
+  // Populate CTCSS dropdowns
+  ['d-ctcss-tx','d-ctcss-rx'].forEach(id=>{
+    const sel=document.getElementById(id);
+    const off=document.createElement('option');
+    off.value=0;off.textContent='Off';sel.appendChild(off);
+    CTCSS_TONES.forEach(t=>{
+      const o=document.createElement('option');
+      o.value=t.raw;o.textContent=t.hz+' Hz';sel.appendChild(o);
+    });
+  });
+  renderTable();
+  if(!navigator.serial){
+    showBanner('Web Serial API not supported — use Chrome or Edge.');
+    document.getElementById('conn-btn').disabled=true;
+    document.getElementById('auto-btn').disabled=true;
+  }
+})();
+</script>
+</body>
+</html>
